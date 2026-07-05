@@ -1,0 +1,96 @@
+ID,Category,Fact
+1,ID Verification,The legal drinking age is 21 in all 50 U.S. states.
+2,ID Verification,Government-issued photo IDs are the only acceptable form of age verification.
+3,ID Verification,An expired ID is not valid for alcohol service — no exceptions.
+4,ID Verification,Best practice is to card every guest regardless of apparent age.
+5,ID Verification,A vertical ID does not mean the person is currently under 21 — check the birthdate.
+6,ID Verification,ID scanners verify the ID but cannot confirm the person holding it is the legitimate owner.
+7,ID Verification,Photocopies of IDs are never acceptable — only original government-issued documents.
+8,ID Verification,When in doubt about an ID always involve a manager.
+9,ID Verification,Foreign passports are acceptable forms of ID for age verification.
+10,ID Verification,A guest who leaves their ID at home must be refused service — no exceptions.
+11,ID Verification,Splits in the lamination are a common sign of a fake or altered ID.
+12,ID Verification,Always compare the photo on the ID to the person presenting it.
+13,ID Verification,Many states issue vertical IDs to people under 21 at the time of issue.
+14,ID Verification,Temporary paper driver's licenses issued by the DMV are valid for age verification.
+15,ID Verification,Consistent carding removes subjectivity and protects you legally.
+16,Signs of Intoxication,Slurred speech is one of the most reliable physical signs of intoxication.
+17,Signs of Intoxication,Loss of coordination is a primary sign that alcohol is affecting the nervous system.
+18,Signs of Intoxication,Bloodshot or glassy eyes can indicate intoxication when combined with other signs.
+19,Signs of Intoxication,A guest who becomes louder and more talkative may be showing early signs of intoxication.
+20,Signs of Intoxication,Alcohol lowers inhibitions by affecting the prefrontal cortex which controls judgment.
+21,Signs of Intoxication,A shift from energetic to suddenly quiet and drowsy is a significant intoxication warning sign.
+22,Signs of Intoxication,Repetitive speech and behavior are behavioral signs of intoxication affecting short-term memory.
+23,Signs of Intoxication,Responsible service requires monitoring guests from the very first drink.
+24,Signs of Intoxication,Visible intoxication means observable signs a reasonable trained server would recognize.
+25,Signs of Intoxication,High tolerance can allow a guest to appear sober at BAC levels that would impair most people.
+26,Signs of Intoxication,A guest spilling their drink or having trouble holding a glass may be losing fine motor control.
+27,Signs of Intoxication,Aggression and argumentative behavior are behavioral signs of alcohol-impaired judgment.
+28,Signs of Intoxication,You do not need a guest to admit intoxication before taking responsible service action.
+29,Signs of Intoxication,Track both the number of drinks and the time elapsed to assess intoxication accurately.
+30,Signs of Intoxication,A guest switching to larger or stronger drinks may be intentionally seeking faster intoxication.
+31,BAC & Physiology,BAC stands for Blood Alcohol Concentration — the percentage of alcohol in the bloodstream.
+32,BAC & Physiology,The legal BAC limit for driving in most U.S. states is 0.08%.
+33,BAC & Physiology,The liver processes approximately one standard drink per hour — nothing speeds this up.
+34,BAC & Physiology,Coffee does not sober a person up — it just makes an alert drunk.
+35,BAC & Physiology,A standard drink contains 0.6 ounces of pure alcohol.
+36,BAC & Physiology,12 ounces of beer equals 5 ounces of wine equals 1.5 ounces of spirits — all one standard drink.
+37,BAC & Physiology,Body weight is one of the most significant factors affecting how quickly BAC rises.
+38,BAC & Physiology,Women typically reach a higher BAC than men of the same weight drinking the same amount.
+39,BAC & Physiology,Food in the stomach slows alcohol absorption — but only if eaten before or during drinking.
+40,BAC & Physiology,Carbonated drinks speed alcohol absorption by accelerating passage into the small intestine.
+41,BAC & Physiology,BAC typically peaks 30 to 90 minutes after the last drink.
+42,BAC & Physiology,A guest can continue to become more impaired after they stop drinking.
+43,BAC & Physiology,Body fat does not absorb alcohol — it stays in the bloodstream until processed by the liver.
+44,BAC & Physiology,Divide proof by 2 to get alcohol percentage — 80-proof vodka is 40% alcohol.
+45,BAC & Physiology,Older adults metabolize alcohol more slowly resulting in higher BAC from the same amount.
+46,BAC & Physiology,Medication interactions can significantly amplify the effects of alcohol.
+47,BAC & Physiology,A 160-pound man drinking five beers in one hour has an approximate BAC of 0.10%.
+48,BAC & Physiology,Exercise does not speed up alcohol elimination — only time reduces BAC.
+49,BAC & Physiology,A person with high alcohol tolerance can have a dangerous BAC while appearing sober.
+50,BAC & Physiology,Impairment of judgment and coordination begins at a BAC well below the legal limit of 0.08%.
+51,Intervention & Refusal,The goal of intervention is to prevent harm — to the guest and to others.
+52,Intervention & Refusal,Begin slowing service at the first sign of intoxication — not after the guest is visibly drunk.
+53,Intervention & Refusal,Offering food water or a non-alcoholic alternative is the most effective way to slow service.
+54,Intervention & Refusal,Always refuse service privately calmly and respectfully.
+55,Intervention & Refusal,"Never say ""you have had enough"" — it is accusatory and tends to escalate situations."
+56,Intervention & Refusal,A refused guest's insistence that they are fine does not override your professional assessment.
+57,Intervention & Refusal,Do not reverse a refusal under pressure — the legal risk far outweighs the social discomfort.
+58,Intervention & Refusal,After refusing service ensure the guest has a safe way home before they leave.
+59,Intervention & Refusal,You cannot physically restrain a guest — but you can call law enforcement if they intend to drive.
+60,Intervention & Refusal,A guest who arrives already intoxicated should be refused alcohol service immediately.
+61,Intervention & Refusal,Friends cannot order alcohol for an intoxicated guest to get around a refusal.
+62,Intervention & Refusal,Document refusals promptly — include time description and any witnesses.
+63,Intervention & Refusal,In a team refusal the primary server leads while the backup provides presence not confrontation.
+64,Intervention & Refusal,If a guest loses consciousness call 911 immediately — do not wait.
+65,Intervention & Refusal,Offering water and a non-alcoholic drink after a refusal reduces confrontation and shows hospitality.
+66,Legal Liability,Dram shop laws hold establishments liable for harm caused by guests they served while intoxicated.
+67,Legal Liability,Third parties who were not at your establishment can sue you under dram shop law.
+68,Legal Liability,Most states hold servers criminally liable for serving a minor a visibly intoxicated guest or allowing drug sales.
+69,Legal Liability,Serving alcohol to anyone under 21 can result in criminal charges fines and license revocation.
+70,Legal Liability,The fake ID defense does not provide complete protection in all states.
+71,Legal Liability,Many states allow personal liability claims directly against individual servers.
+72,Legal Liability,Consistent responsible service practices combined with documentation are the strongest legal defense.
+73,Legal Liability,Incident reports created promptly after an event are critical evidence in legal proceedings.
+74,Legal Liability,Courts apply the reasonable server standard — would a trained server have seen the signs.
+75,Legal Liability,The ABC (Alcohol Beverage Control) enforces alcohol laws and can suspend or revoke your liquor license.
+76,Legal Liability,Criminal liability can result in fines imprisonment and loss of your license to serve alcohol.
+77,Legal Liability,Civil liability involves private lawsuits seeking financial damages from your establishment.
+78,Legal Liability,Written responsible service policies demonstrate a culture of accountability in legal proceedings.
+79,Legal Liability,Dram shop laws include caps — limits on the financial damages that can be awarded — that vary by state.
+80,Legal Liability,An establishment can still face liability even if a server over-served a guest against house policy.
+81,Responsible Service,Responsible alcohol service balances hospitality with a duty to protect guests and the public.
+82,Responsible Service,Monitor guest consumption from the very first drink — not just when problems appear.
+83,Responsible Service,Food slows alcohol absorption — offering food to drinking guests is a responsible service practice.
+84,Responsible Service,A house policy on alcohol service provides operational guidance and legal protection.
+85,Responsible Service,Management is responsible for training staff establishing policy and supporting servers during refusals.
+86,Responsible Service,Servers should not consume alcohol while on duty as it impairs their ability to assess guests.
+87,Responsible Service,Consistent application of responsible service standards on every shift is your best legal protection.
+88,Responsible Service,Comprehensive training develops judgment not just compliance with minimum requirements.
+89,Responsible Service,Offering visible non-alcoholic options makes it easier for guests to pace themselves without embarrassment.
+90,Responsible Service,A last call procedure should allow time to monitor the final round and arrange safe transportation.
+91,Responsible Service,Reporting a coworker who is over-serving a guest is a shared team responsibility.
+92,Responsible Service,Responsible service promotions avoid incentivizing rapid or excessive alcohol consumption.
+93,Responsible Service,The ServSafe Alcohol Primary exam is 40 questions and requires a 75% passing score.
+94,Responsible Service,The ServSafe Alcohol Advanced exam is 70 questions and requires an 80% passing score with a proctor.
+95,Responsible Service,Well-trained servers recognize early signs of intoxication and intervene before problems escalate.
