@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'constants.dart';
-import 'csv_loader.dart';
 import 'app_state.dart';
+import 'csv_loader.dart';
 import 'app_state_persistence.dart';
+import 'readiness_engine.dart';
 import 'home_page.dart';
 import 'dashboard_page.dart';
-import 'readiness_engine.dart';
-import 'safe_prep_nav_bar.dart';
-import 'mixpanel_service.dart';
 
 enum SixtySecondReturnTo { homePage, dashboard }
 
@@ -30,15 +28,15 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
   static const int answerMs = 2000;
   static const int categoryBursts = 5;
 
+  // Category colors — remapped to SafePrep Alcohol's real six categories
+  // (was previously keyed to Manager's food-safety category names).
   static const Map<String, Color> categoryColors = {
-    'Time & Temperature': Color(0xFFC0392B),
-    'Cross-Contamination': Color(0xFFE67E22),
-    'Food Preparation': Color(0xFF27AE60),
-    'Receiving & Storage': Color(0xFF2980B9),
-    'Personal Hygiene': Color(0xFF8E44AD),
-    'Cleaning & Sanitizing': Color(0xFF16A085),
-    'Facility & Equipment': Color(0xFF34495E),
-    'Food Safety Management': Color(0xFFB7950B),
+    'Legal Liability': Color(0xFFC0392B),
+    'BAC & Physiology': Color(0xFF8E44AD),
+    'Intervention & Refusal': Color(0xFFE67E22),
+    'Signs of Intoxication': Color(0xFF2980B9),
+    'Responsible Service': Color(0xFF27AE60),
+    'ID Verification': Color(0xFFB7950B),
   };
 
   bool _isStopped = false;
@@ -54,10 +52,6 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
   @override
   void initState() {
     super.initState();
-    MixpanelService.instance.track(
-      'sixty_second_viewed',
-      properties: {'app_name': 'SP'},
-    );
     _awardExtraCredit();
   }
 
@@ -102,17 +96,23 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
       _showingBurst = true;
       _currentCategory = category;
     });
+
     final all = await QuestionLoader.loadByCategory(category);
     final questions =
         (all..sort((a, b) => b.difficulty.compareTo(a.difficulty)))
             .take(categoryBursts)
             .toList();
+
     if (questions.isEmpty) {
       setState(() => _showingBurst = false);
       return;
     }
+
     await _runBursts(questions, categoryBursts);
-    if (!_isStopped && mounted) setState(() => _showingBurst = false);
+
+    if (!_isStopped && mounted) {
+      setState(() => _showingBurst = false);
+    }
   }
 
   Future<void> _runBursts(List<QuestionModel> questions, int count) async {
@@ -132,9 +132,12 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
 
       await _animateTimer(questionMs);
       if (_isStopped || !mounted) return;
+
       setState(() => _showAnswer = true);
+
       await _animateTimer(answerMs);
       if (_isStopped || !mounted) return;
+
       setState(() => _animating = false);
       await Future.delayed(const Duration(milliseconds: 150));
     }
@@ -152,8 +155,8 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
   Widget _buildCategoryGrid() {
     final categories = AppState.allCategories;
     final hasMissed = _state.missedFinalExamQuestionIds.isNotEmpty;
-    final rows = <Widget>[];
 
+    final rows = <Widget>[];
     for (int i = 0; i < categories.length; i += 2) {
       final cat1 = categories[i];
       final cat2 = i + 1 < categories.length ? categories[i + 1] : null;
@@ -180,7 +183,7 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
             width: double.infinity,
             height: 44,
             child: ElevatedButton(
-              onPressed: _startFinalReview,
+              onPressed: () => _startFinalReview(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryButton,
                 foregroundColor: Colors.white,
@@ -189,7 +192,7 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
                 ),
               ),
               child: const Text(
-                '📋 Final Test Review',
+                '📋 Final Exam Review',
                 style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
               ),
             ),
@@ -202,21 +205,28 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
   Future<void> _startFinalReview() async {
     final missedIds = _state.missedFinalExamQuestionIds;
     if (missedIds.isEmpty) return;
+
     setState(() {
       _isStopped = false;
       _showingBurst = true;
-      _currentCategory = 'Final Test Review';
+      _currentCategory = 'Final Exam Review';
     });
+
     final all = await QuestionLoader.loadAll();
     final missed = all.where((q) => missedIds.contains(q.id)).toList()
       ..shuffle();
     final questions = missed.take(20).toList();
+
     if (questions.isEmpty) {
       setState(() => _showingBurst = false);
       return;
     }
+
     await _runBursts(questions, questions.length);
-    if (!_isStopped && mounted) setState(() => _showingBurst = false);
+
+    if (!_isStopped && mounted) {
+      setState(() => _showingBurst = false);
+    }
   }
 
   Widget _buildCatButton(String category) {
@@ -245,6 +255,7 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
   Widget _buildBurstPlayer() {
     final catColor =
         categoryColors[_currentCategory] ?? AppColors.primaryButton;
+
     return Column(
       spacing: 12,
       children: [
@@ -403,7 +414,6 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
                     : _buildCategoryGrid(),
               ),
             ),
-            const SafePrepNavBar(),
           ],
         ),
       ),

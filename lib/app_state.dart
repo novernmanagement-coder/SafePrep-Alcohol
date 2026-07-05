@@ -144,51 +144,52 @@ class AppState {
   static const int masteryThreshold = 85;
   static const int minAnswersForRawScores = 30;
 
+  // ── Category list — pulled directly from FinalTestQuestions5.csv's
+  // real Category column for SafePrep Alcohol. ──────────────────────
   static const List<String> allCategories = [
-    'Time & Temperature',
-    'Cross-Contamination',
-    'Food Preparation',
-    'Receiving & Storage',
-    'Personal Hygiene',
-    'Cleaning & Sanitizing',
-    'Facility & Equipment',
-    'Food Safety Management',
+    'Legal Liability',
+    'BAC & Physiology',
+    'Intervention & Refusal',
+    'Signs of Intoxication',
+    'Responsible Service',
+    'ID Verification',
   ];
 
+  // TODO: these are PLACEHOLDER industry-baseline scores, not real
+  // alcohol-service exam data. Manager's equivalent map was informed by
+  // real ServSafe food-safety pass-rate data — no equivalent source was
+  // available for alcohol service, so these are estimated starting
+  // points only. Replace with real figures if/when available.
   static const Map<String, int> servSafeIndustryBaseline = {
-    'Time & Temperature': 52,
-    'Cross-Contamination': 58,
-    'Food Preparation': 55,
-    'Receiving & Storage': 64,
-    'Personal Hygiene': 71,
-    'Cleaning & Sanitizing': 49,
-    'Facility & Equipment': 68,
-    'Food Safety Management': 57,
-    'Pest Management': 72,
+    'Legal Liability': 58,
+    'BAC & Physiology': 54,
+    'Intervention & Refusal': 61,
+    'Signs of Intoxication': 65,
+    'Responsible Service': 63,
+    'ID Verification': 70,
   };
 
+  // Exam weights — proportional to each category's real share of the
+  // 175-question bank in FinalTestQuestions5.csv (35/33/29/27/26/25).
   static const Map<String, double> categoryExamWeights = {
-    'Time & Temperature': 0.23,
-    'Cross-Contamination': 0.15,
-    'Receiving & Storage': 0.15,
-    'Personal Hygiene': 0.14,
-    'Cleaning & Sanitizing': 0.12,
-    'Food Preparation': 0.12,
-    'Food Safety Management': 0.05,
-    'Facility & Equipment': 0.02,
-    'Pest Management': 0.02,
+    'Legal Liability': 0.20,
+    'BAC & Physiology': 0.19,
+    'Intervention & Refusal': 0.17,
+    'Signs of Intoxication': 0.15,
+    'Responsible Service': 0.15,
+    'ID Verification': 0.14,
   };
 
+  // Diagnostic question allocation — totals 30, matching Manager's
+  // 30-question diagnostic pattern, distributed proportionally to the
+  // exam weights above.
   static const Map<String, int> categoryMaxQuestions = {
-    'Time & Temperature': 9,
-    'Cross-Contamination': 6,
-    'Receiving & Storage': 6,
-    'Personal Hygiene': 5,
-    'Cleaning & Sanitizing': 5,
-    'Food Preparation': 5,
-    'Food Safety Management': 2,
-    'Facility & Equipment': 1,
-    'Pest Management': 1,
+    'Legal Liability': 6,
+    'BAC & Physiology': 6,
+    'Intervention & Refusal': 5,
+    'Signs of Intoxication': 5,
+    'Responsible Service': 4,
+    'ID Verification': 4,
   };
 
   // Convenience getters

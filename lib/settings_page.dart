@@ -76,6 +76,9 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  // TODO: confirm whether SafePrep Alcohol should point to its own refund
+  // page, or if this shared foodsafetymadeeasy.com page is correct as-is
+  // (same company, same mothership site, same as Manager/Refresher/Español).
   Future<void> _openRefundPage() async {
     final uri = Uri.parse(
       'https://foodsafetymadeeasy.com/refund-redirect-page/',
@@ -220,12 +223,12 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSectionCard(
                       title: 'About SafePrep™',
                       children: [
-                        _buildInfoRow('Version', '1.3.7'),
-                        _buildInfoRow('Build', 'June 2026'),
+                        _buildInfoRow('Version', '1.0.0'),
+                        _buildInfoRow('Build', 'July 2026'),
                         _buildInfoRow('Platform', 'Flutter'),
                         const SizedBox(height: 4),
                         Text(
-                          'SafePrep™ is a psychologically adaptive learning system for ServSafe® Manager exam preparation.',
+                          'SafePrep™ is a psychologically adaptive learning system for ServSafe® Alcohol exam preparation.',
                           style: TextStyle(
                             fontSize: AppFonts.caption,
                             color: AppColors.bodyText,

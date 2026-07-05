@@ -10,9 +10,7 @@ import 'app_state.dart';
 // ─────────────────────────────────────────────────────────────────
 const String _baseUrl =
     'https://raw.githubusercontent.com/novernmanagement-coder/SafePrep_Content/main';
-
 const String _versionUrl = '$_baseUrl/version.json';
-
 const List<String> _remoteFiles = [
   'FinalTestQuestions5.csv',
   'MarqueeFacts.csv',

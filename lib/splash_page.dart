@@ -9,8 +9,7 @@ import 'dashboard_page.dart';
 import 'intro_page.dart';
 import 'preview/preview_cinematic_splash.dart';
 
-// BUILD 26 — version 1.4.2+5 — Full page curriculum, navigation fix, fresh dashboard on first load
-// UPDATED — hard-lock splash with guarantee copy + baked-in countdown.
+// SafePrep Alcohol — splash flow matches SafePrep Manager exactly.
 // First-ever launch holds 15 seconds; every launch after holds 5 seconds.
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -177,7 +176,7 @@ class _SplashPageState extends State<SplashPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Pass the ServSafe® exam or your money back.\nWe\'ll have you ready in less than 4 hours.',
+                'Pass the ServSafe® Alcohol exam or your money back.\nWe\'ll have you ready in less than 2 hours.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.strongText,

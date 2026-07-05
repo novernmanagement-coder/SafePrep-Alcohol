@@ -1,106 +1,51 @@
 import 'package:flutter/material.dart';
 import 'constants.dart';
-import 'peace_of_mind_page.dart';
-import 'safe_prep_nav_bar.dart';
+import 'home_page.dart';
 
 class MnemonicsPage extends StatelessWidget {
   const MnemonicsPage({super.key});
 
+  // DRAFT alcohol-service mnemonics — written to match the acronym +
+  // letter-breakdown format of Manager's mnemonics, but this content is
+  // new and NOT sourced from a verified ServSafe Alcohol curriculum.
+  // Review against real training material before shipping.
   static const List<_MnemonicEntry> _mnemonics = [
-    _MnemonicEntry('E.C.O.L.I.™', 'Bacteria', Color(0xFFC0392B), [
-      ('E', 'Entrails — ground beef, intestines'),
-      ('C', 'Children — highest risk group'),
-      ('O', 'Onset fast — 1–3 days'),
-      ('L', 'Low dose — tiny amount makes you sick'),
-      ('I', 'Improper cooking — undercooked burgers'),
+    _MnemonicEntry('F.A.K.E.™', 'ID Verification', Color(0xFFB7950B), [
+      ('F', 'Feel the card — real IDs have texture, edges, embedded chips'),
+      ('A', 'Angle it — tilt under light to check for holograms'),
+      ('K', 'Know your state — familiarize yourself with valid formats'),
+      ('E', 'Examine the photo — does it actually match the person?'),
     ]),
-    _MnemonicEntry('S.A.L.M.O.N.™', 'Bacteria', Color(0xFFE67E22), [
-      ('S', 'Shell eggs'),
-      ('A', 'Animals — poultry, reptiles'),
-      ('L', 'Live contamination — cross-contam'),
-      ('M', 'Meat & milk'),
-      ('O', 'Onset moderate — 6–48 hours'),
-      ('N', 'No temperature abuse'),
+    _MnemonicEntry('W.A.T.C.H.™', 'BAC & Physiology', Color(0xFF8E44AD), [
+      ('W', 'Weight — lower body weight raises BAC faster'),
+      ('A', 'Alcohol content — proof and pour size both matter'),
+      ('T', 'Time — BAC keeps rising even after the last drink'),
+      ('C', 'Consumption rate — fast drinking spikes BAC quickly'),
+      ('H', 'Hunger — an empty stomach absorbs alcohol faster'),
     ]),
-    _MnemonicEntry('S.H.I.G.E.L.L.A.™', 'Bacteria', Color(0xFF8E44AD), [
-      ('S', 'Salads — potato, tuna, macaroni'),
-      ('H', 'Hands — fecal-oral'),
-      ('I', 'Ill workers — exclude'),
-      ('G', 'Gastro outbreaks — daycares, camps'),
-      ('E', 'Easily spread'),
-      ('L', 'Low dose'),
-      ('L', 'Let no bare-hand contact'),
-      ('A', 'Avoid flies'),
+    _MnemonicEntry('S.T.O.P.™', 'Intervention & Refusal', Color(0xFFE67E22), [
+      ('S', 'See the signs before it becomes a problem'),
+      ('T', 'Talk calmly — never confrontational, never public shaming'),
+      ('O', 'Offer alternatives — water, food, a cab, a ride'),
+      ('P', 'Protect — document the incident and involve a manager'),
     ]),
-    _MnemonicEntry('B.A.C.I.L.L.U.S.™', 'Bacteria', Color(0xFF27AE60), [
-      ('B', 'Buffet rice'),
-      ('A', 'Asian fried rice syndrome'),
-      ('C', 'Cook → cool quickly'),
-      ('I', 'Illness two types — vomit / diarrhea'),
-      ('L', 'Leftovers danger'),
-      ('L', 'Long-lasting spores'),
-      ('U', 'Unsafe holding temps'),
-      ('S', 'Starchy foods — rice, pasta, potatoes'),
+    _MnemonicEntry('T.I.P.S.Y.™', 'Signs of Intoxication', Color(0xFF2980B9), [
+      ('T', 'Talking louder or slurring words'),
+      ('I', 'Impaired coordination or balance'),
+      ('P', 'Poor judgment or inappropriate behavior'),
+      ('S', 'Slowed reaction time'),
+      ('Y', 'Yelling, mood swings, sudden emotional shifts'),
     ]),
-    _MnemonicEntry('V.I.B.R.I.O.™', 'Bacteria', Color(0xFF2980B9), [
-      ('V', 'Vibrant water — warm coastal waters'),
-      ('I', 'In oysters'),
-      ('B', 'Bloody infections possible'),
-      ('R', 'Raw shellfish risk'),
-      ('I', 'Immunocompromised danger'),
-      ('O', 'Only reputable suppliers'),
+    _MnemonicEntry('D.R.A.M.™', 'Legal Liability', Color(0xFFC0392B), [
+      ('D', 'Document every refusal and incident'),
+      ('R', 'Refuse service the moment signs appear — don\'t wait'),
+      ('A', 'Avoid over-service — you\'re liable for what happens after'),
+      ('M', 'Monitor consumption throughout the shift, not just at close'),
     ]),
-    _MnemonicEntry('N.O.R.O.V.I.R.U.S.™', 'Virus', Color(0xFF16A085), [
-      ('N', 'No gloves? No service.'),
-      ('O', 'Onset fast'),
-      ('R', 'Ready-to-eat foods'),
-      ('O', 'Outbreaks on cruise ships'),
-      ('V', 'Very contagious'),
-      ('I', 'Ill workers excluded'),
-      ('R', 'Requires handwashing'),
-      ('U', 'Uncooked foods spread it'),
-      ('S', 'Shellfish sometimes involved'),
-    ]),
-    _MnemonicEntry('H.E.P.A.T.I.T.I.S.™ (A)', 'Virus', Color(0xFFD35400), [
-      ('H', 'Hands → fecal-oral'),
-      ('E', 'Exclusion required'),
-      ('P', 'Poor hygiene'),
-      ('A', 'Asymptomatic early'),
-      ('T', 'Transmitted by RTE foods'),
-      ('I', 'Incubation long — weeks'),
-      ('T', 'Travel risk'),
-      ('I', 'Infected food handlers'),
-      ('S', 'Shellfish from polluted water'),
-    ]),
-    _MnemonicEntry('S.T.A.P.H.™', 'Toxin', Color(0xFF7F8C8D), [
-      ('S', 'Skin infections'),
-      ('T', 'Temperature abuse'),
-      ('A', 'Aerosol contamination'),
-      ('P', 'Protein foods'),
-      ('H', 'Heat-stable toxin'),
-    ]),
-    _MnemonicEntry('C.B.O.T.™ (Botulism)', 'Toxin', Color(0xFF34495E), [
-      ('C', 'Cans — bulging'),
-      ('B', 'Baked potatoes in foil'),
-      ('O', 'Oxygen-free environments'),
-      ('T', 'Toxin deadly'),
-    ]),
-    _MnemonicEntry('C.P.E.R.F.™ (C. perfringens)', 'Toxin', Color(0xFFB7950B), [
-      ('C', 'Cafeteria germ'),
-      ('P', 'Protein foods'),
-      ('E', 'Equipment pans — deep pans'),
-      ('R', 'Reheating issues'),
-      ('F', 'Fast onset'),
-    ]),
-    _MnemonicEntry('A.N.I.S.A.K.I.S.™', 'Parasite', Color(0xFF1ABC9C), [
-      ('A', 'Aquatic parasite'),
-      ('N', 'Not killed by acid'),
-      ('I', 'In raw fish'),
-      ('S', 'Sushi'),
-      ('A', 'Abdominal pain'),
-      ('K', 'Known for tingling throat'),
-      ('I', 'Immediate removal needed'),
-      ('S', 'Suppliers must freeze properly'),
+    _MnemonicEntry('C.U.P.™', 'Responsible Service', Color(0xFF27AE60), [
+      ('C', 'Count drinks served — keep a running mental tally'),
+      ('U', 'Understand the early cutoff signs, not just the late ones'),
+      ('P', 'Pace service — space drinks, encourage food and water'),
     ]),
   ];
 
@@ -113,7 +58,6 @@ class MnemonicsPage extends StatelessWidget {
           children: [
             _buildHeader(context),
             Expanded(child: _buildCardsList()),
-            const SafePrepNavBar(),
           ],
         ),
       ),
@@ -140,7 +84,7 @@ class MnemonicsPage extends StatelessWidget {
               GestureDetector(
                 onTap: () => Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const PeaceOfMindPage()),
+                  MaterialPageRoute(builder: (_) => const HomePage()),
                 ),
                 child: Image.asset(
                   'Assets/splash.png',
@@ -171,7 +115,7 @@ class MnemonicsPage extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           const Text(
-            'Pathogen acronyms from forty years of instruction',
+            'Memory hooks for responsible alcohol service',
             style: TextStyle(
               fontSize: AppFonts.caption,
               color: AppColors.subtleText,

@@ -23,32 +23,27 @@ class _DashboardPageState extends State<DashboardPage> {
   int _lastFactIndex = -1;
   String _currentFact = '';
 
+  // Category order — matches app_state.dart's allCategories exactly.
   static const List<String> categoryOrder = [
-    'Time & Temperature',
-    'Cross-Contamination',
-    'Food Preparation',
-    'Receiving & Storage',
-    'Personal Hygiene',
-    'Cleaning & Sanitizing',
-    'Facility & Equipment',
-    'Food Safety Management',
+    'Legal Liability',
+    'BAC & Physiology',
+    'Intervention & Refusal',
+    'Signs of Intoxication',
+    'Responsible Service',
+    'ID Verification',
   ];
 
-  // ── National average seed values (DISPLAY-ONLY) ─────────────────────
-  // Best-guess placeholders, not sourced data — swap in real numbers
-  // when available. These are never written to AppState/ReadinessEngine;
-  // they exist purely so the Dashboard doesn't look empty before a user
-  // has generated any real data. The moment a category has a real score
-  // (hasScoreForCategory == true), its seeded value is ignored entirely.
+  // National average seed values (DISPLAY-ONLY) — same placeholder-status
+  // as app_state.dart's servSafeIndustryBaseline. Never written to
+  // AppState/ReadinessEngine; purely so the Dashboard doesn't look empty
+  // before a trial user has generated real data.
   static const Map<String, int> _nationalAverages = {
-    'Time & Temperature': 68,
-    'Cross-Contamination': 74,
-    'Food Preparation': 78,
-    'Receiving & Storage': 76,
-    'Personal Hygiene': 82,
-    'Cleaning & Sanitizing': 80,
-    'Facility & Equipment': 85,
-    'Food Safety Management': 71,
+    'Legal Liability': 58,
+    'BAC & Physiology': 54,
+    'Intervention & Refusal': 61,
+    'Signs of Intoxication': 65,
+    'Responsible Service': 63,
+    'ID Verification': 70,
   };
 
   int get _nationalAverageOverall {
@@ -61,7 +56,7 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     MixpanelService.instance.track(
       'dashboard_viewed',
-      properties: {'app_name': 'SP'},
+      properties: {'app_name': 'SA'},
     );
     _loadFacts();
     _startFactTimer();
@@ -139,7 +134,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Image.asset('Assets/splash.png', width: 36, height: 36),
                 const SizedBox(width: 6),
                 Text(
-                  'Prep\u2122',
+                  'Prep™',
                   style: TextStyle(
                     fontSize: AppFonts.header,
                     fontWeight: FontWeight.w600,
@@ -180,12 +175,6 @@ class _DashboardPageState extends State<DashboardPage> {
           'Avg of ${scores.length} ${scores.length == 1 ? 'category' : 'categories'}';
       overallColor = _scoreColor(latest);
     } else if (!_state.hasUnlockedApp) {
-      // Trial mode only, no real data yet — show the seeded national
-      // average so a browsing trial user doesn't see a blank dashboard.
-      // Display-only: never written to AppState. Purchased users always
-      // fall through to the default blank/dash state below, even right
-      // after purchase — the "Thank You" modal already tells them they're
-      // starting fresh, so the dashboard should actually look fresh too.
       latest = _nationalAverageOverall;
       overallText = '$latest%';
       deltaText = 'National average — not your score yet';
@@ -346,7 +335,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ? '$score%'
                   : (_state.hasUnlockedApp
                         ? '\u2014'
-                        : '${_nationalAverages[category] ?? 75}%'),
+                        : '${_nationalAverages[category] ?? 60}%'),
               style: TextStyle(
                 color: hasTaken ? _scoreColor(score) : const Color(0xFF6B7A8A),
                 fontSize: 18,
@@ -416,8 +405,9 @@ class _DashboardPageState extends State<DashboardPage> {
       pulseCategories = failingCategories.take(2).toList();
     } else if (failingCategories.length == 1) {
       pulseCategories = [failingCategories[0]];
-      if (untestedCategories.isNotEmpty)
+      if (untestedCategories.isNotEmpty) {
         pulseCategories.add(untestedCategories[0]);
+      }
     } else {
       pulseCategories = untestedCategories.take(2).toList();
     }
@@ -463,7 +453,9 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       );
 
-      if (i + 2 < studyCategories.length) rows.add(const SizedBox(height: 12));
+      if (i + 2 < studyCategories.length) {
+        rows.add(const SizedBox(height: 12));
+      }
     }
 
     return Column(children: rows);

@@ -1,8 +1,8 @@
-name: safeprep
-description: "SafePrep - Food Safety Exam Prep"
+name: safeprep_alcohol
+description: "SafePrep Alcohol - Responsible Alcohol Service Exam Prep"
 publish_to: 'none'
 
-version: 1.4.2+7
+version: 1.0.0+1
 
 environment:
   sdk: ^3.11.5
