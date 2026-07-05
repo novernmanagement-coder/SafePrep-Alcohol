@@ -1,0 +1,8 @@
+ID,Type,Trigger,Threshold,Category,Title,EmoTone,Icon,Message,Elite
+1,Special,DiagnosticCompleted,0,,Responsible Server Path,Encouraging,🗺️,You took the diagnostic and let SafePrep Alcohol build your personal study plan. That is how professionals prepare.,0
+2,Category,FirstCategoryMastered,85,,Category Certified,Celebrating,✅,85% or above on a category. You are building the knowledge that protects guests and keeps establishments out of court.,0
+3,Category,FirstPerfectCategory,100,,100% Club,Celebrating,💯,100% on a category. You did not just study it — you mastered it.,0
+4,Special,AllCategoriesMastered,85,,Fully Certified Ready,Celebrating,⭐,Every category at 85% or above. You have covered the full spectrum of responsible alcohol service.,0
+5,Score,ExamPassed,75,,ServSafe Alcohol Ready,Celebrating,🏆,You passed the SafePrep Alcohol final exam. You are ready for the real ServSafe Alcohol certification.,0
+6,Score,ExpertClub,95,,Top Server,Elite,🎯,Top 5%. You scored 95% or higher. The exam has nothing left to surprise you with.,1
+7,Score,PerfectFinalExam,100,,Flawless,Elite,🌟,100% on the final exam. Perfect responsible service knowledge. That is rare and you earned it.,1
