@@ -359,7 +359,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         ),
                       ),
                       _buildButton(
-                        'When you\'re ready — take the SafePrep exam',
+                        'When Your Ready - Take the Exam',
                         () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -505,6 +505,8 @@ class _MarqueeState extends State<Marquee> {
 
   void _startScrolling() async {
     await Future.delayed(const Duration(seconds: 2));
+    const double pixelsPerSecond = 150; // tuned for long, growing fact lists
+
     while (mounted) {
       if (!_scrollController.hasClients) {
         await Future.delayed(const Duration(milliseconds: 200));
@@ -515,9 +517,10 @@ class _MarqueeState extends State<Marquee> {
         await Future.delayed(const Duration(milliseconds: 500));
         continue;
       }
+      final durationSeconds = (maxExtent / pixelsPerSecond).clamp(5, 300);
       await _scrollController.animateTo(
         maxExtent,
-        duration: const Duration(seconds: 30),
+        duration: Duration(milliseconds: (durationSeconds * 1000).round()),
         curve: Curves.linear,
       );
       if (!mounted) break;
