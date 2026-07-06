@@ -7,11 +7,14 @@ import 'app_state_persistence.dart';
 // ─────────────────────────────────────────────────────────────────
 // Product IDs — must match App Store Connect exactly
 // ─────────────────────────────────────────────────────────────────
-const String kProductSevenDay = 'SafePrepSevenDay'; // $4.99 — 7 days
-const String kProductFourteenDay = 'SafePrepFourteenDay'; // $8.99 — 14 days
-const String kProductUnlockApp = 'SafePrepUnlock'; // $9.99 — lifetime
+const String kProductSevenDay =
+    'com.geraldmiller.safeprepalcohol.sevenday'; // $4.99 — 7 days
+const String kProductFourteenDay =
+    'com.geraldmiller.safeprepalcohol.fourteenday'; // $8.99 — 14 days
+const String kProductUnlockApp =
+    'com.geraldmiller.safeprepalcohol.lifetime'; // $9.99 — lifetime
 const String kProductUpgrade =
-    'com.geraldmiller.safeprep.upgrade'; // $4.99 — upgrade to lifetime
+    'com.geraldmiller.safeprepalcohol.upgrade'; // $4.99 — upgrade to lifetime
 
 // ─────────────────────────────────────────────────────────────────
 // IAPService
