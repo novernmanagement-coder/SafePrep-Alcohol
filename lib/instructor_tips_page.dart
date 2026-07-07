@@ -3,6 +3,7 @@ import 'constants.dart';
 import 'csv_loader.dart';
 import 'peace_of_mind_page.dart';
 import 'safe_prep_nav_bar.dart';
+import 'mixpanel_service.dart';
 
 class InstructorTipsPage extends StatefulWidget {
   const InstructorTipsPage({super.key});
@@ -39,6 +40,10 @@ class _InstructorTipsPageState extends State<InstructorTipsPage> {
   void initState() {
     super.initState();
     _loadTips();
+    MixpanelService.instance.track(
+      'instructor_tips_viewed',
+      properties: {'app_name': 'SA'},
+    );
   }
 
   Future<void> _loadTips() async {
@@ -114,7 +119,7 @@ class _InstructorTipsPageState extends State<InstructorTipsPage> {
           ),
           const SizedBox(height: 2),
           const Text(
-            '25+ years of ServSafe\u00ae expertise',
+            '20+ years of ServSafe\u00ae expertise',
             style: TextStyle(
               fontSize: AppFonts.caption,
               color: AppColors.subtleText,

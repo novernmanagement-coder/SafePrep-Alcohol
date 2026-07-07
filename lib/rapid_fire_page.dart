@@ -49,15 +49,17 @@ class _RapidFirePageState extends State<RapidFirePage>
   double _timerProgress = 0.0;
   Color _timerColor = AppColors.primaryButton;
 
+  // Category colors remapped to SafePrep Alcohol's real six categories
+  // (was previously keyed to Manager's food-safety category names) —
+  // matches the palette already established in sixty_second_refresh_page.dart
+  // for visual consistency across the app.
   static const Map<String, Color> _categoryColors = {
-    'Time & Temperature': Color(0xFFC0392B),
-    'Cross-Contamination': Color(0xFFE67E22),
-    'Food Preparation': Color(0xFF27AE60),
-    'Receiving & Storage': Color(0xFF2980B9),
-    'Personal Hygiene': Color(0xFF8E44AD),
-    'Cleaning & Sanitizing': Color(0xFF16A085),
-    'Facility & Equipment': Color(0xFF34495E),
-    'Food Safety Management': Color(0xFFB7950B),
+    'Legal Liability': Color(0xFFC0392B),
+    'BAC & Physiology': Color(0xFF8E44AD),
+    'Intervention & Refusal': Color(0xFFE67E22),
+    'Signs of Intoxication': Color(0xFF2980B9),
+    'Responsible Service': Color(0xFF27AE60),
+    'ID Verification': Color(0xFFB7950B),
   };
 
   @override
@@ -146,11 +148,7 @@ class _RapidFirePageState extends State<RapidFirePage>
   }
 
   void _applyQuestion(QuestionModel q) {
-    String category = q.category;
-    if (category.toLowerCase() == 'pest management') {
-      category = 'Food Safety Management';
-    }
-    final color = _categoryColors[category] ?? AppColors.primaryButton;
+    final color = _categoryColors[q.category] ?? AppColors.primaryButton;
     _bubbleColor = color;
     _accentColor = color;
     _questionText = q.questionText;

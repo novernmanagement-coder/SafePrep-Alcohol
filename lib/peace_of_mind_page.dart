@@ -7,14 +7,32 @@ import 'mnemonics_page.dart';
 import 'rapid_fire_page.dart';
 import 'scenario_drills_page.dart';
 import 'safe_prep_nav_bar.dart';
+import 'mixpanel_service.dart';
 
-class PeaceOfMindPage extends StatelessWidget {
+class PeaceOfMindPage extends StatefulWidget {
   const PeaceOfMindPage({super.key});
 
-  void _go(BuildContext context, Widget page) => Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (_) => page),
-  );
+  @override
+  State<PeaceOfMindPage> createState() => _PeaceOfMindPageState();
+}
+
+class _PeaceOfMindPageState extends State<PeaceOfMindPage> {
+  @override
+  void initState() {
+    super.initState();
+    MixpanelService.instance.track(
+      'peace_of_mind_viewed',
+      properties: {'app_name': 'SA'},
+    );
+  }
+
+  void _go(BuildContext context, String toolName, Widget page) {
+    MixpanelService.instance.track(
+      'peace_of_mind_tool_tapped',
+      properties: {'tool': toolName, 'app_name': 'SA'},
+    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => page));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,31 +113,39 @@ class PeaceOfMindPage extends StatelessWidget {
                     _buildToolButton(
                       context,
                       '\ud83c\udccf Flash Cards',
-                      () => _go(context, const FlashCardsPage()),
+                      () => _go(context, 'flash_cards', const FlashCardsPage()),
                     ),
                     const SizedBox(height: 8),
                     _buildToolButton(
                       context,
                       '\ud83c\udfad Scenario Drills',
-                      () => _go(context, const ScenarioDrillsPage()),
+                      () => _go(
+                        context,
+                        'scenario_drills',
+                        const ScenarioDrillsPage(),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     _buildToolButton(
                       context,
                       '\u26a1 Rapid Fire',
-                      () => _go(context, const RapidFirePage()),
+                      () => _go(context, 'rapid_fire', const RapidFirePage()),
                     ),
                     const SizedBox(height: 8),
                     _buildToolButton(
                       context,
                       '\ud83e\udde0 Mnemonics',
-                      () => _go(context, const MnemonicsPage()),
+                      () => _go(context, 'mnemonics', const MnemonicsPage()),
                     ),
                     const SizedBox(height: 8),
                     _buildToolButton(
                       context,
                       '\ud83d\udccc Proctor Tips',
-                      () => _go(context, const InstructorTipsPage()),
+                      () => _go(
+                        context,
+                        'proctor_tips',
+                        const InstructorTipsPage(),
+                      ),
                     ),
 
                     const SizedBox(height: 12),

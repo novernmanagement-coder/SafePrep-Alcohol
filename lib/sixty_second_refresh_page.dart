@@ -7,6 +7,7 @@ import 'readiness_engine.dart';
 import 'home_page.dart';
 import 'dashboard_page.dart';
 import 'safe_prep_nav_bar.dart';
+import 'mixpanel_service.dart';
 
 enum SixtySecondReturnTo { homePage, dashboard }
 
@@ -54,6 +55,10 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
   void initState() {
     super.initState();
     _awardExtraCredit();
+    MixpanelService.instance.track(
+      'sixty_second_refresh_viewed',
+      properties: {'app_name': 'SA'},
+    );
   }
 
   void _awardExtraCredit() {
@@ -92,6 +97,11 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
   }
 
   Future<void> _startCategoryBursts(String category) async {
+    MixpanelService.instance.track(
+      'sixty_second_category_started',
+      properties: {'category': category, 'app_name': 'SA'},
+    );
+
     setState(() {
       _isStopped = false;
       _showingBurst = true;
@@ -109,14 +119,18 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
       return;
     }
 
-    await _runBursts(questions, categoryBursts);
+    await _runBursts(questions, categoryBursts, category);
 
     if (!_isStopped && mounted) {
       setState(() => _showingBurst = false);
     }
   }
 
-  Future<void> _runBursts(List<QuestionModel> questions, int count) async {
+  Future<void> _runBursts(
+    List<QuestionModel> questions,
+    int count, [
+    String? category,
+  ]) async {
     for (int i = 0; i < count && !_isStopped && mounted; i++) {
       final q = questions[i % questions.length];
       final answers = [q.answer1, q.answer2, q.answer3, q.answer4];
@@ -141,6 +155,17 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
 
       setState(() => _animating = false);
       await Future.delayed(const Duration(milliseconds: 150));
+    }
+
+    if (!_isStopped && mounted) {
+      MixpanelService.instance.track(
+        'sixty_second_completed',
+        properties: {
+          'category': category ?? _currentCategory,
+          'burst_count': count,
+          'app_name': 'SA',
+        },
+      );
     }
   }
 
@@ -207,6 +232,11 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
     final missedIds = _state.missedFinalExamQuestionIds;
     if (missedIds.isEmpty) return;
 
+    MixpanelService.instance.track(
+      'sixty_second_category_started',
+      properties: {'category': 'Final Exam Review', 'app_name': 'SA'},
+    );
+
     setState(() {
       _isStopped = false;
       _showingBurst = true;
@@ -223,7 +253,7 @@ class _SixtySecondRefreshPageState extends State<SixtySecondRefreshPage> {
       return;
     }
 
-    await _runBursts(questions, questions.length);
+    await _runBursts(questions, questions.length, 'Final Exam Review');
 
     if (!_isStopped && mounted) {
       setState(() => _showingBurst = false);

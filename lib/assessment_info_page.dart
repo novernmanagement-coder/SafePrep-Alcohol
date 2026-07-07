@@ -123,7 +123,7 @@ class _AssessmentInfoPageState extends State<AssessmentInfoPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        '30 questions. We analyze your answers. We build your curriculum.',
+                        '$questionCount questions. We analyze your answers. We build your curriculum.',
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.bodyText,

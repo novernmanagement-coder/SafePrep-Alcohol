@@ -53,7 +53,7 @@ class _PreviewReelOverlayState extends State<PreviewReelOverlay>
       'asset': 'Assets/reel_flashcards.png',
       'label': 'Flash Cards',
       'blurb':
-          '82 cards, color-coded by category. Tap to reveal — a classic study method built into your personalized deck.',
+          '50 cards, color-coded by category. Tap to reveal — a classic study method built into your personalized deck.',
     },
     {
       'asset': 'Assets/reel_scenario.png',
@@ -165,21 +165,19 @@ class _PreviewReelOverlayState extends State<PreviewReelOverlay>
 
   Future<void> _runLoop() async {
     while (_running && mounted) {
-      // Personalized card (index 0) — hold, then move to first feature blurb
       if (_reelIndex == 0) {
         await Future.delayed(const Duration(seconds: 8));
         if (!_running || !mounted) return;
         await _itemController.reverse();
         if (!mounted) return;
         setState(() {
-          _reelShowingBlurb = true; // show blurb first
+          _reelShowingBlurb = true;
           _reelIndex = 1;
         });
         await _itemController.forward();
         continue;
       }
 
-      // Readiness card (last slide) — hold, then loop back to start
       if (_reelIndex == _reelItems.length - 1) {
         await Future.delayed(const Duration(seconds: 8));
         if (!_running || !mounted) return;
@@ -193,9 +191,7 @@ class _PreviewReelOverlayState extends State<PreviewReelOverlay>
         continue;
       }
 
-      // Feature slides
       if (_reelShowingBlurb) {
-        // Currently showing blurb — hold, then show screenshot
         await Future.delayed(const Duration(milliseconds: 3500));
         if (!_running || !mounted) return;
         await _itemController.reverse();
@@ -203,20 +199,17 @@ class _PreviewReelOverlayState extends State<PreviewReelOverlay>
         setState(() => _reelShowingBlurb = false);
         await _itemController.forward();
       } else {
-        // Currently showing screenshot — hold, then move to next blurb
         await Future.delayed(const Duration(milliseconds: 3500));
         if (!_running || !mounted) return;
         await _itemController.reverse();
         if (!mounted) return;
         final nextIndex = _reelIndex + 1;
         if (nextIndex == _reelItems.length - 1) {
-          // Next is readiness card
           setState(() {
             _reelShowingBlurb = false;
             _reelIndex = nextIndex;
           });
         } else {
-          // Next is another feature slide — show its blurb first
           setState(() {
             _reelShowingBlurb = true;
             _reelIndex = nextIndex;
@@ -505,7 +498,6 @@ class _PreviewReelOverlayState extends State<PreviewReelOverlay>
 
             const SizedBox(height: 24),
 
-            // Progress dots
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(_reelItems.length, (i) {

@@ -25,15 +25,16 @@ class _FlashCardsPageState extends State<FlashCardsPage>
   late AnimationController _flipController;
   late Animation<double> _scaleX;
 
+  // Suits remapped to SafePrep Alcohol's real six categories
+  // (was previously keyed to Manager's food-safety category names, which
+  // caused every card to fall back to the generic "??" suit).
   static const Map<String, _Suit> _categorySuits = {
-    'Time & Temperature': _Suit('🌡', Color(0xFFC0392B), 'T&T'),
-    'Cross-Contamination': _Suit('⚠', Color(0xFFE67E22), 'CC'),
-    'Food Preparation': _Suit('✦', Color(0xFF27AE60), 'FP'),
-    'Receiving & Storage': _Suit('◈', Color(0xFF2980B9), 'R&S'),
-    'Personal Hygiene': _Suit('❋', Color(0xFF8E44AD), 'PH'),
-    'Cleaning & Sanitizing': _Suit('✺', Color(0xFF16A085), 'C&S'),
-    'Facility & Equipment': _Suit('⚙', Color(0xFF2C3E50), 'F&E'),
-    'Food Safety Management': _Suit('◉', Color(0xFFB7950B), 'FSM'),
+    'Legal Liability': _Suit('⚖', Color(0xFFC0392B), 'LL'),
+    'BAC & Physiology': _Suit('🩸', Color(0xFF8E44AD), 'BAC'),
+    'Intervention & Refusal': _Suit('✋', Color(0xFFE67E22), 'IR'),
+    'Signs of Intoxication': _Suit('👁', Color(0xFF2980B9), 'SI'),
+    'Responsible Service': _Suit('✓', Color(0xFF27AE60), 'RS'),
+    'ID Verification': _Suit('🪪', Color(0xFFB7950B), 'ID'),
   };
 
   @override
@@ -171,12 +172,8 @@ class _FlashCardsPageState extends State<FlashCardsPage>
     _flipCard(() => setState(() => _state = _CardState.question));
   }
 
-  static String _normalizeCategory(String cat) =>
-      cat.toLowerCase() == 'pest management' ? 'Food Safety Management' : cat;
-
   _Suit _suitFor(String category) =>
-      _categorySuits[_normalizeCategory(category)] ??
-      const _Suit('◆', Color(0xFF4A6FA5), '??');
+      _categorySuits[category] ?? const _Suit('◆', Color(0xFF4A6FA5), '??');
 
   String get _progressText {
     if (_cards.isEmpty) return 'Loading...';
@@ -393,7 +390,6 @@ class _FlashCardsPageState extends State<FlashCardsPage>
     if (_cards.isEmpty) return const SizedBox();
     final q = _cards[_currentIndex];
     final suit = _suitFor(q.category);
-    final normCat = _normalizeCategory(q.category);
 
     return Column(
       children: [
@@ -405,7 +401,7 @@ class _FlashCardsPageState extends State<FlashCardsPage>
               _suitCorner(suit, crossAxisAlignment: CrossAxisAlignment.start),
               Expanded(
                 child: Text(
-                  normCat,
+                  q.category,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 11,

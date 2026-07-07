@@ -64,7 +64,7 @@ class _PreviewRevealPageState extends State<PreviewRevealPage>
   Future<void> _onBuy(String tier, Future<IAPResult> Function() buyFn) async {
     MixpanelService.instance.track(
       'purchase_tier_tapped',
-      properties: {'tier': tier, 'app_name': 'SP'},
+      properties: {'tier': tier, 'app_name': 'SA'},
     );
     setState(() {
       _isPurchasing = true;
@@ -86,7 +86,7 @@ class _PreviewRevealPageState extends State<PreviewRevealPage>
       if (AppState().hasUnlockedApp) {
         MixpanelService.instance.track(
           'purchase_confirmed',
-          properties: {'tier': tier, 'app_name': 'SP'},
+          properties: {'tier': tier, 'app_name': 'SA'},
         );
         if (!mounted) return;
         _showPurchaseThankYouModal();
@@ -177,7 +177,7 @@ class _PreviewRevealPageState extends State<PreviewRevealPage>
   void _showTrialExpiredModal() {
     MixpanelService.instance.track(
       'trial_expired_modal_shown',
-      properties: {'app_name': 'SP'},
+      properties: {'app_name': 'SA'},
     );
     showDialog(
       context: context,
@@ -507,7 +507,7 @@ class _PreviewRevealPageState extends State<PreviewRevealPage>
                                 onPressed: () {
                                   MixpanelService.instance.track(
                                     'preview_reel_viewed',
-                                    properties: {'app_name': 'SP'},
+                                    properties: {'app_name': 'SA'},
                                   );
                                   setState(() => _reelVisible = true);
                                 },
@@ -616,7 +616,7 @@ class _PreviewRevealPageState extends State<PreviewRevealPage>
                               onPressed: () {
                                 MixpanelService.instance.track(
                                   'restore_purchase_tapped',
-                                  properties: {'app_name': 'SP'},
+                                  properties: {'app_name': 'SA'},
                                 );
                                 IAPService.instance.restorePurchases();
                               },

@@ -23,16 +23,18 @@ class _AssessmentPageV2State extends State<AssessmentPageV2> {
   int _currentIndex = 0;
   bool _loaded = false;
 
+  // Category weights remapped to SafePrep Alcohol's real six categories
+  // (was previously keyed to Manager's food-safety category names, which
+  // caused every filter to return zero matches — "No questions found.").
+  // Weights are an even-ish starting split; adjust based on desired
+  // emphasis per category.
   static const Map<String, double> categoryWeights = {
-    'Time & Temperature': 0.23,
-    'Cross-Contamination': 0.15,
-    'Receiving & Storage': 0.15,
-    'Personal Hygiene': 0.14,
-    'Cleaning & Sanitizing': 0.12,
-    'Food Preparation': 0.12,
-    'Food Safety Management': 0.05,
-    'Facility & Equipment': 0.02,
-    'Pest Management': 0.02,
+    'Legal Liability': 0.20,
+    'BAC & Physiology': 0.19,
+    'Intervention & Refusal': 0.17,
+    'Signs of Intoxication': 0.15,
+    'Responsible Service': 0.15,
+    'ID Verification': 0.14,
   };
 
   @override
@@ -41,7 +43,7 @@ class _AssessmentPageV2State extends State<AssessmentPageV2> {
     _loadQuestions();
     MixpanelService.instance.track(
       'assessment_started',
-      properties: {'app_name': 'SP'},
+      properties: {'app_name': 'SA'},
     );
   }
 
@@ -65,13 +67,13 @@ class _AssessmentPageV2State extends State<AssessmentPageV2> {
     }
 
     while (allocated < target) {
-      categoryCounts['Time & Temperature'] =
-          categoryCounts['Time & Temperature']! + 1;
+      categoryCounts['Legal Liability'] =
+          categoryCounts['Legal Liability']! + 1;
       allocated++;
     }
     while (allocated > target) {
-      categoryCounts['Time & Temperature'] =
-          categoryCounts['Time & Temperature']! - 1;
+      categoryCounts['Legal Liability'] =
+          categoryCounts['Legal Liability']! - 1;
       allocated--;
     }
 
@@ -166,7 +168,7 @@ class _AssessmentPageV2State extends State<AssessmentPageV2> {
         'score': result.overallScore,
         'question_count': _questions.length,
         'is_unlocked': state.hasUnlockedApp,
-        'app_name': 'SP',
+        'app_name': 'SA',
       },
     );
 
@@ -285,7 +287,7 @@ class _AssessmentPageV2State extends State<AssessmentPageV2> {
                             properties: {
                               'questions_answered': _currentIndex,
                               'total_questions': _questions.length,
-                              'app_name': 'SP',
+                              'app_name': 'SA',
                             },
                           );
                           Navigator.pushReplacement(

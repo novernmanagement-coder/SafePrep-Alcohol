@@ -7,6 +7,7 @@ import 'home_page.dart';
 import 'final_exam_grade_page.dart';
 import 'final_exam_review_page.dart';
 import 'safe_prep_nav_bar.dart';
+import 'mixpanel_service.dart';
 
 class FinalStepExamPage extends StatefulWidget {
   const FinalStepExamPage({super.key});
@@ -22,19 +23,22 @@ class _FinalStepExamPageState extends State<FinalStepExamPage> {
   int _currentIndex = 0;
   bool _loaded = false;
 
+  // Category weights remapped to SafePrep Alcohol's real six categories
+  // (was previously keyed to Manager's food-safety category names, which
+  // caused every filter to return zero matches — "No questions found.").
+  // Weights are an even-ish starting split; adjust based on desired
+  // emphasis per category.
   static const Map<String, double> categoryWeights = {
-    'Time & Temperature': 0.23,
-    'Cross-Contamination': 0.15,
-    'Receiving & Storage': 0.15,
-    'Personal Hygiene': 0.14,
-    'Cleaning & Sanitizing': 0.12,
-    'Food Preparation': 0.12,
-    'Food Safety Management': 0.05,
-    'Facility & Equipment': 0.02,
-    'Pest Management': 0.02,
+    'Legal Liability': 0.20,
+    'BAC & Physiology': 0.19,
+    'Intervention & Refusal': 0.17,
+    'Signs of Intoxication': 0.15,
+    'Responsible Service': 0.15,
+    'ID Verification': 0.14,
   };
 
-  static const int totalQuestions = 90;
+  // Confirmed: the ServSafe Alcohol final exam is 40 questions.
+  static const int totalQuestions = 40;
   static const double hardWeight = 0.40;
   static const double mediumWeight = 0.40;
 
@@ -42,6 +46,10 @@ class _FinalStepExamPageState extends State<FinalStepExamPage> {
   void initState() {
     super.initState();
     _loadQuestions();
+    MixpanelService.instance.track(
+      'final_exam_started',
+      properties: {'app_name': 'SA'},
+    );
   }
 
   Future<void> _loadQuestions() async {
@@ -62,24 +70,24 @@ class _FinalStepExamPageState extends State<FinalStepExamPage> {
     }
 
     while (allocated < totalQuestions) {
-      categoryCounts['Time & Temperature'] =
-          categoryCounts['Time & Temperature']! + 1;
+      categoryCounts['Legal Liability'] =
+          categoryCounts['Legal Liability']! + 1;
       allocated++;
     }
     while (allocated > totalQuestions) {
-      categoryCounts['Time & Temperature'] =
-          categoryCounts['Time & Temperature']! - 1;
+      categoryCounts['Legal Liability'] =
+          categoryCounts['Legal Liability']! - 1;
       allocated--;
     }
 
     for (final cat in categoryWeights.keys) {
       final needed = categoryCounts[cat]!;
+      // Removed the Manager-only "Pest Management folds into Food Safety
+      // Management" special case — not applicable to alcohol categories.
       final pool = all
           .where(
             (q) =>
-                (q.category.toLowerCase() == cat.toLowerCase() ||
-                    (cat == 'Food Safety Management' &&
-                        q.category.toLowerCase() == 'pest management')) &&
+                q.category.toLowerCase() == cat.toLowerCase() &&
                 !usedIds.contains(q.id),
           )
           .toList();
@@ -156,6 +164,16 @@ class _FinalStepExamPageState extends State<FinalStepExamPage> {
       _questions,
       _selectedAnswers,
       TestType.finalExam,
+    );
+
+    MixpanelService.instance.track(
+      'final_exam_completed',
+      properties: {
+        'score': result.overallScore,
+        'question_count': _questions.length,
+        'passed': result.overallScore >= 75,
+        'app_name': 'SA',
+      },
     );
 
     for (final entry in result.categoryScores.entries) {
@@ -259,12 +277,22 @@ class _FinalStepExamPageState extends State<FinalStepExamPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const HomePage(),
-                              ),
-                            ),
+                            onTap: () {
+                              MixpanelService.instance.track(
+                                'final_exam_abandoned',
+                                properties: {
+                                  'questions_answered': _currentIndex,
+                                  'total_questions': _questions.length,
+                                  'app_name': 'SA',
+                                },
+                              );
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const HomePage(),
+                                ),
+                              );
+                            },
                             child: Row(
                               children: [
                                 Text(

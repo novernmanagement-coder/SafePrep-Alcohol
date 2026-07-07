@@ -324,30 +324,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   child: Column(
                     spacing: AppSizes.cardSpacing,
                     children: [
-                      _state.hasUnlockedApp
-                          ? Column(
-                              spacing: 2,
-                              children: [
-                                _buildButton(
-                                  'Create my personalized curriculum',
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const AssessmentInfoPage(),
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  '(Recommended first step)',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.subtleText,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : _buildTrialCountdown(),
+                      Column(
+                        spacing: 2,
+                        children: [
+                          _buildButton(
+                            'Create my personalized curriculum',
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AssessmentInfoPage(),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '(Recommended first step)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.subtleText,
+                            ),
+                          ),
+                          if (!_state.hasUnlockedApp) ...[
+                            const SizedBox(height: 6),
+                            _buildTrialCountdown(),
+                          ],
+                        ],
+                      ),
 
                       _buildButton(
                         'The SafePrep™ Dashboard',
@@ -505,7 +506,8 @@ class _MarqueeState extends State<Marquee> {
 
   void _startScrolling() async {
     await Future.delayed(const Duration(seconds: 2));
-    const double pixelsPerSecond = 150; // tuned for long, growing fact lists
+    const double pixelsPerSecond =
+        60; // slowed 60% from original 150 — was still too fast
 
     while (mounted) {
       if (!_scrollController.hasClients) {
@@ -517,7 +519,7 @@ class _MarqueeState extends State<Marquee> {
         await Future.delayed(const Duration(milliseconds: 500));
         continue;
       }
-      final durationSeconds = (maxExtent / pixelsPerSecond).clamp(5, 300);
+      final durationSeconds = (maxExtent / pixelsPerSecond).clamp(5, 1200);
       await _scrollController.animateTo(
         maxExtent,
         duration: Duration(milliseconds: (durationSeconds * 1000).round()),

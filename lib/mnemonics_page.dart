@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'constants.dart';
 import 'home_page.dart';
+import 'mixpanel_service.dart';
 
-class MnemonicsPage extends StatelessWidget {
+class MnemonicsPage extends StatefulWidget {
   const MnemonicsPage({super.key});
 
+  @override
+  State<MnemonicsPage> createState() => _MnemonicsPageState();
+}
+
+class _MnemonicsPageState extends State<MnemonicsPage> {
   // DRAFT alcohol-service mnemonics — written to match the acronym +
   // letter-breakdown format of Manager's mnemonics, but this content is
   // new and NOT sourced from a verified ServSafe Alcohol curriculum.
@@ -48,6 +54,15 @@ class MnemonicsPage extends StatelessWidget {
       ('P', 'Pace service — space drinks, encourage food and water'),
     ]),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    MixpanelService.instance.track(
+      'mnemonics_viewed',
+      properties: {'app_name': 'SA'},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
