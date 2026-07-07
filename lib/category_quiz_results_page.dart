@@ -61,6 +61,33 @@ class _CategoryQuizResultsPageState extends State<CategoryQuizResultsPage> {
     _state.saveCategoryQuizScore(widget.category, percent);
     _state.incrementCategoryQuizAttempts(widget.category);
 
+    // Trophy checks — restored from SafePrep Manager, previously missing
+    // from this fork. Category-level milestones are evaluated here since
+    // this is the moment a real, current score for the category is known.
+    if (percent == 100 &&
+        !_state.earnedTrophyIds.contains('FirstPerfectCategory')) {
+      _state.addEarnedMilestone(
+        'FirstPerfectCategory',
+        '100% Club — ${widget.category}',
+      );
+    }
+
+    if (percent >= AppState.masteryThreshold &&
+        !_state.earnedTrophyIds.contains('FirstCategoryMastered')) {
+      _state.addEarnedMilestone(
+        'FirstCategoryMastered',
+        'Category Certified — ${widget.category}',
+      );
+    }
+
+    if (_state.masteredCategories.length == AppState.allCategories.length &&
+        !_state.earnedTrophyIds.contains('AllCategoriesMastered')) {
+      _state.addEarnedMilestone(
+        'AllCategoriesMastered',
+        'Fully Certified Ready',
+      );
+    }
+
     _state.readinessScore = ReadinessEngine.calculate(_state);
     _state.readinessCoachMessage = ReadinessEngine.coachMessage(
       _state,
