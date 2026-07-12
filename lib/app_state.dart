@@ -102,6 +102,15 @@ class AppState {
   }
   // ──────────────────────────────────────────────────────────
 
+  // ── Trial tracking ──────────────────────────────────────────
+  // True once the 'trial_started' Mixpanel event has fired for this
+  // install. Prevents re-firing on every HomePage remount (navigation,
+  // pushAndRemoveUntil, etc). Persists across reset() the same way the
+  // purchase fields do. Same fix as SafePrep Manager — see App Manual
+  // §16.2.
+  bool trialStarted = false;
+  // ──────────────────────────────────────────────────────────
+
   // ── Readiness Index ───────────────────────────────────────
   int readinessScore = 0;
   String readinessCoachMessage =
@@ -374,12 +383,14 @@ class AppState {
     final savedHasUnlocked = hasUnlockedApp;
     final savedPurchaseType = purchaseType;
     final savedPurchaseDate = purchaseDate;
+    final savedTrialStarted = trialStarted;
 
     userName = '';
     hasSeenIntro = false;
     hasUnlockedApp = false;
     purchaseType = PurchaseType.none;
     purchaseDate = null;
+    trialStarted = false;
     readinessScore = 0;
     readinessCoachMessage =
         'Take the diagnostic assessment to start building your readiness score.';
@@ -405,6 +416,7 @@ class AppState {
     hasUnlockedApp = savedHasUnlocked;
     purchaseType = savedPurchaseType;
     purchaseDate = savedPurchaseDate;
+    trialStarted = savedTrialStarted;
   }
 
   Map<String, dynamic> toJson() => {
@@ -414,6 +426,7 @@ class AppState {
     'hasUnlockedApp': hasUnlockedApp,
     'purchaseType': purchaseType.name,
     'purchaseDate': purchaseDate?.toIso8601String(),
+    'trialStarted': trialStarted,
     'readinessScore': readinessScore,
     'readinessCoachMessage': readinessCoachMessage,
     'readinessCheerMessage': readinessCheerMessage,
@@ -455,6 +468,7 @@ class AppState {
     purchaseDate = json['purchaseDate'] != null
         ? DateTime.parse(json['purchaseDate'])
         : null;
+    trialStarted = json['trialStarted'] ?? false;
     readinessScore = json['readinessScore'] ?? 0;
     readinessCoachMessage =
         json['readinessCoachMessage'] ??

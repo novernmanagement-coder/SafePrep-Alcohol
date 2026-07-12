@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'constants.dart';
 import 'app_state.dart';
 import 'trial_timer_service.dart';
+import 'mixpanel_service.dart';
+import 'iap_service.dart';
 import 'home_page.dart';
 import 'dashboard_page.dart';
 import 'rapid_fire_page.dart';
 
-class SafePrepNavBar extends StatelessWidget {
+class SafePrepNavBar extends StatefulWidget {
   /// Set to true only from DashboardPage. When true and the user is still
   /// in trial mode, the "Dashboard" button is replaced with a live
   /// "Trial — mm:ss" countdown instead. Every other page keeps the normal
@@ -15,6 +17,13 @@ class SafePrepNavBar extends StatelessWidget {
   final bool isDashboardPage;
 
   const SafePrepNavBar({super.key, this.isDashboardPage = false});
+
+  @override
+  State<SafePrepNavBar> createState() => _SafePrepNavBarState();
+}
+
+class _SafePrepNavBarState extends State<SafePrepNavBar> {
+  bool _purchaseInFlight = false;
 
   void _goHome(BuildContext context) {
     Navigator.pushReplacement(
@@ -37,33 +46,148 @@ class SafePrepNavBar extends StatelessWidget {
     );
   }
 
+  // Nav bar's Unlock button buys the $4.99 / 7-day product directly —
+  // no multi-price-selector detour. Someone tapping "Unlock" from the
+  // nav bar has already shown intent; making them choose between three
+  // prices on a separate page is an extra step they didn't ask for.
+  // Same fix as SafePrep Manager — see App Manual §16.5.
+  Future<void> _buyNow() async {
+    if (_purchaseInFlight) return;
+    setState(() => _purchaseInFlight = true);
+
+    MixpanelService.instance.track(
+      'paywall_viewed',
+      properties: {'source': 'nav_bar', 'app_name': 'SA'},
+    );
+
+    final result = await IAPService.instance.buySevenDay();
+
+    if (!mounted) return;
+    setState(() => _purchaseInFlight = false);
+
+    if (result == IAPResult.success) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("You're unlocked! 🎉")));
+      return; // isUnlocked flips on next build — Unlock button disappears
+    }
+
+    if (result == IAPResult.canceled) {
+      // User intentionally backed out of the App Store sheet — no error,
+      // nothing to show.
+      return;
+    }
+
+    final message = result.userMessage;
+    if (message != null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool showTimer = isDashboardPage && !AppState().hasUnlockedApp;
+    final bool isUnlocked = AppState().hasUnlockedApp;
+    final bool showTimer = widget.isDashboardPage && !isUnlocked;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        spacing: 6,
         children: [
-          _NavButton(
-            icon: Icons.home_outlined,
-            label: 'Home',
-            onTap: () => _goHome(context),
+          Expanded(
+            child: _NavButton(
+              icon: Icons.home_outlined,
+              label: 'Home',
+              onTap: () => _goHome(context),
+            ),
           ),
-          showTimer
-              ? _TrialTimerNavButton(onTap: () => _goDashboard(context))
-              : _NavButton(
-                  icon: Icons.dashboard_outlined,
-                  label: 'Dashboard',
-                  onTap: () => _goDashboard(context),
-                ),
-          _NavButton(
-            icon: Icons.bolt_outlined,
-            label: 'Rapid Fire',
-            onTap: () => _goRapidFire(context),
+          Expanded(
+            child: showTimer
+                ? _TrialTimerNavButton(onTap: () => _goDashboard(context))
+                : _NavButton(
+                    icon: Icons.dashboard_outlined,
+                    label: 'Dashboard',
+                    onTap: () => _goDashboard(context),
+                  ),
           ),
+          Expanded(
+            child: _NavButton(
+              icon: Icons.bolt_outlined,
+              label: 'Rapid Fire',
+              onTap: () => _goRapidFire(context),
+            ),
+          ),
+          // Persistent purchase CTA — shown on every page that includes
+          // this nav bar, for as long as the user hasn't unlocked.
+          if (!isUnlocked)
+            Expanded(
+              child: _UnlockNavButton(
+                loading: _purchaseInFlight,
+                onTap: () => _buyNow(),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Persistent gold "Unlock" nav button. Only rendered for trial users, on
+/// every page that includes SafePrepNavBar.
+class _UnlockNavButton extends StatelessWidget {
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _UnlockNavButton({required this.onTap, this.loading = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: loading ? null : onTap,
+      child: SizedBox(
+        height: AppSizes.footerButtonHeight,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0A0F),
+            border: Border.all(
+              color: const Color(0xFFD4AF37),
+              width: AppSizes.buttonBorderThickness,
+            ),
+            borderRadius: BorderRadius.circular(
+              AppSizes.footerButtonCornerRadius,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 2,
+            children: [
+              loading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFD4AF37),
+                      ),
+                    )
+                  : const Icon(Icons.star, size: 18, color: Color(0xFFD4AF37)),
+              Text(
+                'Unlock',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: AppFonts.label,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFD4AF37),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -111,7 +235,6 @@ class _TrialTimerNavButtonState extends State<_TrialTimerNavButton> {
     return GestureDetector(
       onTap: widget.onTap,
       child: SizedBox(
-        width: AppSizes.footerButtonWidth,
         height: AppSizes.footerButtonHeight,
         child: Container(
           decoration: BoxDecoration(
@@ -135,6 +258,8 @@ class _TrialTimerNavButtonState extends State<_TrialTimerNavButton> {
               ),
               Text(
                 'Trial — $_formatted',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: AppFonts.label,
                   fontWeight: FontWeight.w500,
@@ -165,7 +290,6 @@ class _NavButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: AppSizes.footerButtonWidth,
         height: AppSizes.footerButtonHeight,
         child: Container(
           decoration: BoxDecoration(
@@ -185,6 +309,8 @@ class _NavButton extends StatelessWidget {
               Icon(icon, size: 18, color: AppColors.secondaryButtonForeground),
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: AppFonts.label,
                   fontWeight: FontWeight.w500,

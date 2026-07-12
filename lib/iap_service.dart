@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'app_state.dart';
 import 'app_state_persistence.dart';
+import 'mixpanel_service.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // Product IDs — must match App Store Connect exactly
@@ -15,6 +16,12 @@ const String kProductUnlockApp =
     'com.geraldmiller.safeprepalcohol.lifetime'; // $9.99 — lifetime
 const String kProductUpgrade =
     'com.geraldmiller.safeprepalcohol.upgrade'; // $4.99 — upgrade to lifetime
+
+// How long a buy* call will wait for StoreKit to resolve (purchased,
+// canceled, or errored) before giving up and returning IAPResult.timeout.
+// Prevents a nav bar / button loading spinner from getting stuck forever
+// if the purchase stream never emits for some edge case.
+const Duration _purchaseTimeout = Duration(seconds: 90);
 
 // ─────────────────────────────────────────────────────────────────
 // IAPService
@@ -33,6 +40,10 @@ class IAPService {
 
   bool _available = false;
   bool get isAvailable => _available;
+
+  // Tracks in-flight purchases so _onPurchaseUpdate can resolve the
+  // Future that the calling buy* method is awaiting. Keyed by product ID.
+  final Map<String, Completer<IAPResult>> _pendingPurchases = {};
 
   // ── Initialization ──────────────────────────────────────────
   Future<void> initialize() async {
@@ -87,22 +98,59 @@ class IAPService {
     _subscription?.cancel();
   }
 
-  // ── Purchase handlers ───────────────────────────────────────
+  // ── Purchase stream handler ─────────────────────────────────
+  // This is where the ACTUAL outcome of a purchase becomes known —
+  // buyNonConsumable() only confirms the request was submitted, not
+  // whether the person completed, canceled, or hit an error in the
+  // App Store sheet. Every outcome here both resolves the Completer
+  // the calling buy* method is waiting on AND logs a Mixpanel event.
   void _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
+      final completer = _pendingPurchases[purchase.productID];
+
       switch (purchase.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
           await _handleSuccess(purchase);
+          MixpanelService.instance.track(
+            'purchase_completed',
+            properties: {
+              'product_id': purchase.productID,
+              'restored': purchase.status == PurchaseStatus.restored,
+            },
+          );
+          completer?.complete(IAPResult.success);
+          _pendingPurchases.remove(purchase.productID);
           break;
+
         case PurchaseStatus.error:
           debugPrint('IAP error: ${purchase.error?.message}');
+          MixpanelService.instance.track(
+            'purchase_failed',
+            properties: {
+              'product_id': purchase.productID,
+              'error': purchase.error?.message ?? 'unknown',
+            },
+          );
+          completer?.complete(IAPResult.error);
+          _pendingPurchases.remove(purchase.productID);
           break;
+
         case PurchaseStatus.canceled:
           debugPrint('IAP canceled: ${purchase.productID}');
+          MixpanelService.instance.track(
+            'purchase_canceled',
+            properties: {'product_id': purchase.productID},
+          );
+          completer?.complete(IAPResult.canceled);
+          _pendingPurchases.remove(purchase.productID);
           break;
+
         case PurchaseStatus.pending:
           debugPrint('IAP pending: ${purchase.productID}');
+          // Don't resolve yet — StoreKit is still working (e.g. Ask to
+          // Buy family approval). The caller keeps waiting up to
+          // _purchaseTimeout.
           break;
       }
 
@@ -148,82 +196,49 @@ class IAPService {
   }
 
   // ── Buy ─────────────────────────────────────────────────────
-  Future<IAPResult> _buyProduct(ProductDetails? product, String id) async {
+  // Shared purchase flow used by every buy* method below. Submits the
+  // request, then WAITS for _onPurchaseUpdate to actually resolve it
+  // (success / canceled / error) instead of returning as soon as the
+  // App Store sheet is requested.
+  Future<IAPResult> _purchase(ProductDetails? Function() getProduct) async {
     if (!_available) return IAPResult.storeUnavailable;
+
+    var product = getProduct();
     if (product == null) {
       await _loadProducts();
+      product = getProduct();
       if (product == null) return IAPResult.productNotFound;
     }
+
+    final completer = Completer<IAPResult>();
+    _pendingPurchases[product.id] = completer;
+
     try {
       await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: product!),
+        purchaseParam: PurchaseParam(productDetails: product),
       );
-      return IAPResult.initiated;
     } catch (e) {
       debugPrint('IAP buy error: $e');
+      _pendingPurchases.remove(product.id);
       return IAPResult.error;
     }
+
+    return completer.future.timeout(
+      _purchaseTimeout,
+      onTimeout: () {
+        _pendingPurchases.remove(product!.id);
+        return IAPResult.timeout;
+      },
+    );
   }
 
-  Future<IAPResult> buySevenDay() async {
-    if (!_available) return IAPResult.storeUnavailable;
-    if (_sevenDayProduct == null) await _loadProducts();
-    if (_sevenDayProduct == null) return IAPResult.productNotFound;
-    try {
-      await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: _sevenDayProduct!),
-      );
-      return IAPResult.initiated;
-    } catch (e) {
-      debugPrint('IAP buy error: $e');
-      return IAPResult.error;
-    }
-  }
+  Future<IAPResult> buySevenDay() => _purchase(() => _sevenDayProduct);
 
-  Future<IAPResult> buyFourteenDay() async {
-    if (!_available) return IAPResult.storeUnavailable;
-    if (_fourteenDayProduct == null) await _loadProducts();
-    if (_fourteenDayProduct == null) return IAPResult.productNotFound;
-    try {
-      await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: _fourteenDayProduct!),
-      );
-      return IAPResult.initiated;
-    } catch (e) {
-      debugPrint('IAP buy error: $e');
-      return IAPResult.error;
-    }
-  }
+  Future<IAPResult> buyFourteenDay() => _purchase(() => _fourteenDayProduct);
 
-  Future<IAPResult> buyUnlockApp() async {
-    if (!_available) return IAPResult.storeUnavailable;
-    if (_unlockProduct == null) await _loadProducts();
-    if (_unlockProduct == null) return IAPResult.productNotFound;
-    try {
-      await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: _unlockProduct!),
-      );
-      return IAPResult.initiated;
-    } catch (e) {
-      debugPrint('IAP buy error: $e');
-      return IAPResult.error;
-    }
-  }
+  Future<IAPResult> buyUnlockApp() => _purchase(() => _unlockProduct);
 
-  Future<IAPResult> buyUpgrade() async {
-    if (!_available) return IAPResult.storeUnavailable;
-    if (_upgradeProduct == null) await _loadProducts();
-    if (_upgradeProduct == null) return IAPResult.productNotFound;
-    try {
-      await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: _upgradeProduct!),
-      );
-      return IAPResult.initiated;
-    } catch (e) {
-      debugPrint('IAP buy error: $e');
-      return IAPResult.error;
-    }
-  }
+  Future<IAPResult> buyUpgrade() => _purchase(() => _upgradeProduct);
 
   // ── Restore ─────────────────────────────────────────────────
   Future<void> restorePurchases() async {
@@ -239,17 +254,32 @@ class IAPService {
 }
 
 // ── Result enum ──────────────────────────────────────────────
-enum IAPResult { initiated, storeUnavailable, productNotFound, error }
+// NOTE: this replaces the old enum, which had `initiated` — meaning
+// "request submitted," not "purchase resolved." Every buy* call site
+// must be updated: `success` now means the purchase actually completed;
+// there is no longer a value that means "we don't know yet."
+enum IAPResult {
+  success,
+  canceled,
+  storeUnavailable,
+  productNotFound,
+  timeout,
+  error,
+}
 
 extension IAPErrorMessage on IAPResult {
   String? get userMessage {
     switch (this) {
-      case IAPResult.initiated:
+      case IAPResult.success:
         return null;
+      case IAPResult.canceled:
+        return null; // user intentionally backed out — no error to show
       case IAPResult.storeUnavailable:
         return 'The App Store is not available right now. Please try again later.';
       case IAPResult.productNotFound:
         return 'Purchase could not be loaded. Please check your connection and try again.';
+      case IAPResult.timeout:
+        return 'The purchase is taking longer than expected. Check your connection and try again — if you were charged, use Restore Purchases.';
       case IAPResult.error:
         return 'Something went wrong. Please try again.';
     }

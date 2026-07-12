@@ -1,16 +1,19 @@
 import 'app_state.dart';
 
 class ReadinessEngine {
-  static const Map<String, double> _examWeights = {
-    'Time & Temperature': 0.23,
-    'Cross-Contamination': 0.15,
-    'Receiving & Storage': 0.15,
-    'Personal Hygiene': 0.14,
-    'Cleaning & Sanitizing': 0.12,
-    'Food Preparation': 0.12,
-    'Food Safety Management': 0.05,
-    'Facility & Equipment': 0.02,
-  };
+  // Exam weights now come directly from AppState.categoryExamWeights —
+  // that is the single source of truth for category weighting. This
+  // file previously kept its own private _examWeights map as a second,
+  // separate copy. During the Alcohol fork, AppState.categoryExamWeights
+  // was correctly updated to the six alcohol categories, but this
+  // private copy was missed and stayed on the old food-safety category
+  // names (Time & Temperature, Cross-Contamination, etc). Every lookup
+  // against the six real alcohol categories silently missed and fell
+  // back to the 0.02 default — so studying or even mastering a category
+  // only ever moved the readiness score by ~2 points instead of its
+  // real 14-20% weight, which looked exactly like "nothing happened."
+  // Deleting the duplicate map (rather than just updating its keys)
+  // means this class of bug can't recur on the next app fork.
 
   static const double _ecFlashCards = 1.0;
   static const double _ecRapidFire = 1.0;
@@ -21,7 +24,7 @@ class ReadinessEngine {
   static const double _ecMaxTotal = 10.0;
 
   static double _categoryPoints(String category, int score) {
-    final weight = _examWeights[category] ?? 0.02;
+    final weight = AppState.categoryExamWeights[category] ?? 0.02;
     final maxPts = weight * 100.0;
     if (score >= 85) return maxPts;
     if (score >= 75) return maxPts * 0.6;
@@ -139,7 +142,7 @@ class ReadinessEngine {
 
     if (unmastered.isNotEmpty) {
       final cat = unmastered.first;
-      final weight = (_examWeights[cat] ?? 0.02) * 100;
+      final weight = (AppState.categoryExamWeights[cat] ?? 0.02) * 100;
       final score = state.getCategoryScore(cat);
       return '$cat needs work — you\'re at $score% and it counts for ${weight.round()}% of the exam.';
     }
