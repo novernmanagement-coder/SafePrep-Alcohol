@@ -4,10 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import 'app_state.dart';
 import 'app_state_persistence.dart';
+import 'mixpanel_service.dart';
 import 'home_page.dart';
 import 'dashboard_page.dart';
 import 'intro_page.dart';
 import 'preview/preview_cinematic_splash.dart';
+import 'splash_navigating_page.dart';
 
 // SafePrep Alcohol — splash flow matches SafePrep Manager exactly.
 // First-ever launch holds 15 seconds; every launch after holds 5 seconds.
@@ -28,12 +30,26 @@ class _SplashPageState extends State<SplashPage> {
   // How long before the countdown number starts ticking (orientation beat).
   static const int _orientationSeconds = 2;
 
+  // Access code. Correct entry → SplashNavigatingPage (debug menu — jump
+  // straight to FSME landing, the onboarding funnel, Home, or a
+  // force-unlocked Dashboard without needing a real purchase). Ported
+  // from SafePrep Manager's long-press-the-logo debug entry. Anything
+  // else, blank, or dismissed → dialog just closes, normal splash
+  // countdown/navigation continues underneath if it hasn't already fired.
+  //
+  // DEBUG ONLY — REMOVE BEFORE RELEASE.
+  static const String _accessCode = 'Novern2026!';
+
   Timer? _displayTicker;
   int _secondsElapsed = 0;
 
   // Resolved once prefs are read. Null until then — build() shows no
   // countdown text during that brief window.
   int? _totalHoldSeconds;
+
+  // Guards against the auto-navigate firing after a long-press has
+  // already taken the user down the debug path.
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -84,16 +100,17 @@ class _SplashPageState extends State<SplashPage> {
 
     // Hard-lock hold — no skip, matches the visible countdown above.
     await Future.delayed(Duration(seconds: holdSeconds));
-    if (!mounted) return;
+    if (!mounted || _navigated) return;
 
     // Clear stale debug state
     if (state.hasUnlockedApp && state.purchaseDate == null) {
       state.reset();
       await AppStatePersistence.delete();
     }
-    if (!mounted) return;
+    if (!mounted || _navigated) return;
 
     if (_debugShowPreview) {
+      _navigated = true;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const PreviewCinematicSplash()),
@@ -104,7 +121,8 @@ class _SplashPageState extends State<SplashPage> {
     if (_debugBypassPreview) {
       state.hasUnlockedApp = true;
       state.purchaseType = PurchaseType.lifetime;
-      if (!mounted) return;
+      if (!mounted || _navigated) return;
+      _navigated = true;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
@@ -115,7 +133,8 @@ class _SplashPageState extends State<SplashPage> {
     if (state.hasUnlockedApp && state.isExpired) {
       state.hasUnlockedApp = false;
       AppStatePersistence.save();
-      if (!mounted) return;
+      if (!mounted || _navigated) return;
+      _navigated = true;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const PreviewCinematicSplash()),
@@ -129,7 +148,8 @@ class _SplashPageState extends State<SplashPage> {
         state.hasSeenIntro = true;
         AppStatePersistence.save();
       }
-      if (!mounted) return;
+      if (!mounted || _navigated) return;
+      _navigated = true;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const DashboardPage()),
@@ -141,10 +161,79 @@ class _SplashPageState extends State<SplashPage> {
     // sets the expectation ("Your dashboard opens in 3...2...1...") so this
     // delivers on that promise directly.
     // TrialTimerService will fire the paywall at 30 minutes
-    if (!mounted) return;
+    if (!mounted || _navigated) return;
+    _navigated = true;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const DashboardPage()),
+    );
+  }
+
+  /// Long-press on the splash logo — reaches the debug access-code
+  /// prompt. Wrong, blank, or dismissed entry just closes the dialog;
+  /// the normal timed navigation continues underneath if it hasn't
+  /// already fired.
+  Future<void> _debugEntry() async {
+    final entered = await _promptAccessCode();
+    if (!mounted || _navigated) return;
+
+    if (entered == _accessCode) {
+      _navigated = true;
+      _displayTicker?.cancel();
+      MixpanelService.instance.track(
+        'SpOn_Splash_Route',
+        properties: {'app_name': 'SA', 'path': 'debug_nav_longpress'},
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const SplashNavigatingPage()),
+      );
+    }
+    // Wrong/blank/dismissed: do nothing, let normal routing proceed.
+  }
+
+  /// Shows a modal asking for the access code. Returns the entered
+  /// string, or null if dismissed.
+  Future<String?> _promptAccessCode() {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF13130F),
+          title: const Text(
+            'Access code',
+            style: TextStyle(color: Color(0xFFF0EDE8), fontSize: 16),
+          ),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            obscureText: true,
+            style: const TextStyle(color: Color(0xFFF0EDE8)),
+            decoration: const InputDecoration(
+              hintText: 'Enter code',
+              hintStyle: TextStyle(color: Color(0x66F0EDE8)),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0x33D4AF37)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFD4AF37)),
+              ),
+            ),
+            onSubmitted: (v) => Navigator.pop(ctx, v),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text),
+              child: const Text(
+                'Continue',
+                style: TextStyle(color: Color(0xFFD4AF37)),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -161,7 +250,10 @@ class _SplashPageState extends State<SplashPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('Assets/splash.png', width: 80, height: 80),
+              GestureDetector(
+                onLongPress: _debugEntry,
+                child: Image.asset('Assets/splash.png', width: 80, height: 80),
+              ),
               const SizedBox(height: 24),
 
               const Text(
