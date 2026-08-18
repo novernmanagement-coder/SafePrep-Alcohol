@@ -243,11 +243,11 @@ class OnboardTrust extends StatelessWidget {
                   ),
                   _capabilityTile(
                     Icons.checklist_rtl_outlined,
-                    '500+ ServSafe aligned questions',
+                    '175+ ServSafe aligned questions',
                   ),
                   _capabilityTile(
                     Icons.workspace_premium_outlined,
-                    'Full 90 question exam',
+                    'Full 40 question exam',
                   ),
                 ],
               ),
