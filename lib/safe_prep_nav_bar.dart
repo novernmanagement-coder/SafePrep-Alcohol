@@ -1,19 +1,15 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'constants.dart';
 import 'app_state.dart';
-import 'trial_timer_service.dart';
 import 'mixpanel_service.dart';
 import 'iap_service.dart';
 import 'home_page.dart';
 import 'dashboard_page.dart';
 import 'rapid_fire_page.dart';
+import 'onboard/onboard_paywall.dart';
+import 'renew_page.dart';
 
 class SafePrepNavBar extends StatefulWidget {
-  /// Set to true only from DashboardPage. When true and the user is still
-  /// in trial mode, the "Dashboard" button is replaced with a live
-  /// "Trial — mm:ss" countdown instead. Every other page keeps the normal
-  /// "Dashboard" label regardless of this flag.
   final bool isDashboardPage;
 
   const SafePrepNavBar({super.key, this.isDashboardPage = false});
@@ -32,26 +28,55 @@ class _SafePrepNavBarState extends State<SafePrepNavBar> {
     );
   }
 
+  // Gated on real purchase state — either never purchased, or a
+  // sevenDay/fourteenDay purchase whose calendar expiry has passed
+  // (AppState.isExpired, purchaseDate + duration vs. now). Locked
+  // users route to OnboardPaywall — confirmed the sole active
+  // in-app paywall; the old preview/PreviewRevealPage screen is no
+  // longer used anywhere and should not be re-added.
   void _goDashboard(BuildContext context) {
+    final state = AppState();
+    final bool locked = !state.hasUnlockedApp || state.isExpired;
+    if (locked) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardPaywall()),
+        (route) => false,
+      );
+      return;
+    }
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const DashboardPage()),
     );
   }
 
+  // Same gate as _goDashboard() — previously Rapid Fire had NO lock
+  // check at all here, relying only on the old paywall page hiding
+  // its own nav footer to indirectly block access. That's a real gap
+  // if a locked user reaches this nav bar from anywhere else it
+  // appears, so this button now checks directly like Dashboard does.
   void _goRapidFire(BuildContext context) {
+    final state = AppState();
+    final bool locked = !state.hasUnlockedApp || state.isExpired;
+    if (locked) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardPaywall()),
+        (route) => false,
+      );
+      return;
+    }
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const RapidFirePage()),
     );
   }
 
-  // Nav bar's Unlock button buys the $4.99 / 7-day product directly —
-  // no multi-price-selector detour. Someone tapping "Unlock" from the
-  // nav bar has already shown intent; making them choose between three
-  // prices on a separate page is an extra step they didn't ask for.
-  // Same fix as SafePrep Manager — see App Manual §16.5.
-  Future<void> _buyNow() async {
+  // Unlock button only — the original first-purchase product
+  // (kProductSevenDay, a non-consumable). Renew has its own separate
+  // flow now (see _goRenew() below) and no longer calls this.
+  Future<void> _buyNow(BuildContext context) async {
     if (_purchaseInFlight) return;
     setState(() => _purchaseInFlight = true);
 
@@ -66,32 +91,51 @@ class _SafePrepNavBarState extends State<SafePrepNavBar> {
     setState(() => _purchaseInFlight = false);
 
     if (result == IAPResult.success) {
-      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("You're unlocked! 🎉")));
-      return; // isUnlocked flips on next build — Unlock button disappears
+      return;
     }
 
     if (result == IAPResult.canceled) {
-      // User intentionally backed out of the App Store sheet — no error,
-      // nothing to show.
       return;
     }
 
     final message = result.userMessage;
     if (message != null) {
-      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
+  // Renew opens its own dedicated page (RenewPage) rather than
+  // purchasing directly from the nav bar — that page handles the
+  // real $2.99 buyRenewal() flow, shows FSME's readiness/date copy,
+  // and gives the user a clean back-out. Just navigation here, no
+  // purchase logic duplicated in this file.
+  Future<void> _goRenew(BuildContext context) async {
+    final renewed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const RenewPage()),
+    );
+    if (renewed == true && mounted) {
+      setState(() {}); // refresh nav bar state (daysRemaining, showRenew)
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool isUnlocked = AppState().hasUnlockedApp;
-    final bool showTimer = widget.isDashboardPage && !isUnlocked;
+    final state = AppState();
+    final bool isUnlocked = state.hasUnlockedApp;
+
+    // Real threshold restored — shows for existing sevenDay/
+    // fourteenDay purchasers once daysRemaining <= 2 (or already
+    // expired), matching the home_page.dart FSME explainer's gate.
+    final bool showRenew =
+        isUnlocked &&
+        state.isTimeLimited &&
+        ((state.daysRemaining ?? 0) <= 2 || state.isExpired);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -106,13 +150,11 @@ class _SafePrepNavBarState extends State<SafePrepNavBar> {
             ),
           ),
           Expanded(
-            child: showTimer
-                ? _TrialTimerNavButton(onTap: () => _goDashboard(context))
-                : _NavButton(
-                    icon: Icons.dashboard_outlined,
-                    label: 'Dashboard',
-                    onTap: () => _goDashboard(context),
-                  ),
+            child: _NavButton(
+              icon: Icons.dashboard_outlined,
+              label: 'Dashboard',
+              onTap: () => _goDashboard(context),
+            ),
           ),
           Expanded(
             child: _NavButton(
@@ -121,13 +163,23 @@ class _SafePrepNavBarState extends State<SafePrepNavBar> {
               onTap: () => _goRapidFire(context),
             ),
           ),
-          // Persistent purchase CTA — shown on every page that includes
-          // this nav bar, for as long as the user hasn't unlocked.
+          // Unlock (never purchased) and Renew (existing purchase
+          // expiring soon) are mutually exclusive states — a
+          // time-limited purchaser is by definition already unlocked
+          // — so these are two independent slots, not one shared
+          // condition.
           if (!isUnlocked)
             Expanded(
               child: _UnlockNavButton(
                 loading: _purchaseInFlight,
-                onTap: () => _buyNow(),
+                onTap: () => _buyNow(context),
+              ),
+            ),
+          if (showRenew)
+            Expanded(
+              child: _RenewNavButton(
+                loading: false,
+                onTap: () => _goRenew(context),
               ),
             ),
         ],
@@ -136,8 +188,6 @@ class _SafePrepNavBarState extends State<SafePrepNavBar> {
   }
 }
 
-/// Persistent gold "Unlock" nav button. Only rendered for trial users, on
-/// every page that includes SafePrepNavBar.
 class _UnlockNavButton extends StatelessWidget {
   final bool loading;
   final VoidCallback onTap;
@@ -193,54 +243,23 @@ class _UnlockNavButton extends StatelessWidget {
   }
 }
 
-/// Dashboard-only nav slot that displays a live-ticking "Trial — mm:ss"
-/// countdown in place of the normal Dashboard label/icon, reading from the
-/// same TrialTimerService instance used elsewhere so it never drifts out
-/// of sync with the actual expiration logic.
-class _TrialTimerNavButton extends StatefulWidget {
+class _RenewNavButton extends StatelessWidget {
+  final bool loading;
   final VoidCallback onTap;
 
-  const _TrialTimerNavButton({required this.onTap});
-
-  @override
-  State<_TrialTimerNavButton> createState() => _TrialTimerNavButtonState();
-}
-
-class _TrialTimerNavButtonState extends State<_TrialTimerNavButton> {
-  Timer? _displayTicker;
-
-  @override
-  void initState() {
-    super.initState();
-    _displayTicker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _displayTicker?.cancel();
-    super.dispose();
-  }
-
-  String get _formatted {
-    final remaining = TrialTimerService.instance.remainingSeconds;
-    final minutes = remaining ~/ 60;
-    final seconds = remaining % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
+  const _RenewNavButton({required this.onTap, this.loading = false});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: loading ? null : onTap,
       child: SizedBox(
         height: AppSizes.footerButtonHeight,
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.secondaryButton,
+            color: const Color(0xFF0A0A0F),
             border: Border.all(
-              color: AppColors.footerButtonBorder,
+              color: const Color(0xFFD4AF37),
               width: AppSizes.buttonBorderThickness,
             ),
             borderRadius: BorderRadius.circular(
@@ -251,19 +270,24 @@ class _TrialTimerNavButtonState extends State<_TrialTimerNavButton> {
             mainAxisAlignment: MainAxisAlignment.center,
             spacing: 2,
             children: [
-              Icon(
-                Icons.timer_outlined,
-                size: 18,
-                color: AppColors.secondaryButtonForeground,
-              ),
+              loading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFD4AF37),
+                      ),
+                    )
+                  : const Icon(Icons.star, size: 18, color: Color(0xFFD4AF37)),
               Text(
-                'Trial — $_formatted',
+                'Renew',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: AppFonts.label,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.secondaryButtonForeground,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFD4AF37),
                 ),
               ),
             ],
