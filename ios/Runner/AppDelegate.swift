@@ -20,9 +20,15 @@ import UIKit
     // Store receipt file is named "sandboxReceipt" instead of the
     // production receipt name. Used to keep test purchases out of real
     // Mixpanel conversion data.
+    //
+    // FlutterPluginRegistry itself has no `.messenger` — that lives on
+    // FlutterPluginRegistrar, obtained via registrar(forPlugin:). "Receipt
+    // Channel" here is just a unique key to claim a registrar slot, the
+    // same way any real Flutter plugin bootstraps its own method channel.
+    let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ReceiptChannel")
     let receiptChannel = FlutterMethodChannel(
         name: "com.geraldmiller.safeprepalcohol/receipt",
-        binaryMessenger: engineBridge.pluginRegistry.messenger()
+        binaryMessenger: registrar.messenger
     )
     receiptChannel.setMethodCallHandler { (call, result) in
         if call.method == "isSandboxReceipt" {

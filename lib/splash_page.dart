@@ -152,15 +152,16 @@ class _SplashPageState extends State<SplashPage> {
     }
 
     if (state.hasUnlockedApp && state.isExpired) {
+      // Clear the stale unlocked flag and fall through to the same
+      // path every other non-purchased user takes below — matches
+      // SafePrep Manager's current behavior. This used to route to
+      // PreviewCinematicSplash → PreviewRevealPage, but that screen
+      // still offers the retired 14-day/lifetime tiers (no longer
+      // real products), so an expired purchaser could land on buy
+      // buttons that fail. No separate preview treatment needed.
       state.hasUnlockedApp = false;
       AppStatePersistence.save();
       if (!mounted || _navigated) return;
-      _navigated = true;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PreviewCinematicSplash()),
-      );
-      return;
     }
 
     if (state.hasUnlockedApp) {

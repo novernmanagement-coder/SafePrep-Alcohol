@@ -15,7 +15,7 @@ import 'final_exam_intro_page.dart';
 import 'peace_of_mind_page.dart';
 import 'trial_timer_service.dart';
 import 'mixpanel_service.dart';
-import 'preview/preview_reveal_page.dart';
+import 'onboard/onboard_paywall.dart';
 import 'safe_prep_nav_bar.dart';
 
 class HomePage extends StatefulWidget {
@@ -105,7 +105,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const PreviewRevealPage()),
+      MaterialPageRoute(builder: (_) => const OnboardPaywall()),
       (route) => false,
     );
   }
@@ -706,7 +706,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const PreviewRevealPage()),
+          MaterialPageRoute(builder: (_) => const OnboardPaywall()),
           (route) => false,
         );
       },
@@ -737,11 +737,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
-  // Tappable — routes to PreviewRevealPage rather than firing a direct
+  // Tappable — routes to the paywall rather than firing a direct
   // purchase (unlike the nav bar's "Unlock" button). This widget reads
   // as a status display, not a buy button, so a tap should lead to
-  // context and a price choice, not an immediate App Store sheet. Same
-  // fix as SafePrep Manager — see App Manual §16.6.
+  // context and a price choice, not an immediate App Store sheet.
   Widget _buildTrialCountdown() {
     final remaining = TrialTimerService.instance.remainingSeconds;
     final minutes = (remaining ~/ 60).toString().padLeft(2, '0');
@@ -755,7 +754,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const PreviewRevealPage()),
+          MaterialPageRoute(builder: (_) => const OnboardPaywall()),
           (route) => false,
         );
       },
