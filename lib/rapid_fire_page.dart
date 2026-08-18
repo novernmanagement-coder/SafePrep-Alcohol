@@ -42,8 +42,8 @@ class _RapidFirePageState extends State<RapidFirePage>
   Animation<Offset> _slideOffset = const AlwaysStoppedAnimation(Offset.zero);
 
   bool _answersVisible = false;
-  Color _colorA = const Color(0xFF4A6FA5);
-  Color _colorB = const Color(0xFF4A6FA5);
+  Color _colorA = const Color(0xFF7A2E2E);
+  Color _colorB = const Color(0xFF7A2E2E);
   bool _buttonsEnabled = true;
 
   double _timerProgress = 0.0;
@@ -118,8 +118,8 @@ class _RapidFirePageState extends State<RapidFirePage>
         _timerProgress = 0.0;
         _timerColor = AppColors.primaryButton;
         _buttonsEnabled = true;
-        _colorA = const Color(0xFF4A6FA5);
-        _colorB = const Color(0xFF4A6FA5);
+        _colorA = const Color(0xFF7A2E2E);
+        _colorB = const Color(0xFF7A2E2E);
         _applyQuestion(q);
       });
 

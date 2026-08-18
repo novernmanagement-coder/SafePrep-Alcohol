@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Brand Colors
-  static const Color servSafeBlue = Color(0xFFE3F0F9);
-  static const Color headerBlue = Color(0xFFD9E8F4);
+  static const Color servSafeBlue = Color(0xFFF7EFE3);
+  static const Color headerBlue = Color(0xFFEEDFC4);
   static const Color cardBackground = Color(0xFFFFFFFF);
 
   // Text Colors
@@ -11,13 +11,13 @@ class AppColors {
   static const Color subtleText = Color(0xFF666666);
   static const Color footerText = Color(0xFF888888);
   static const Color strongText = Color(0xFF333333);
-  static const Color starMotifBlue = Color(0xFFC0D2E4);
+  static const Color starMotifBlue = Color(0xFFD9C3A0);
 
   // Button Colors
-  static const Color primaryButton = Color(0xFF4A6FA5);
+  static const Color primaryButton = Color(0xFF7A2E2E);
   static const Color primaryButtonForeground = Colors.white;
   static const Color secondaryButton = Colors.white;
-  static const Color secondaryButtonForeground = Color(0xFF4A6FA5);
+  static const Color secondaryButtonForeground = Color(0xFF7A2E2E);
   static const Color neutralButton = Color(0xFFEFEFEF);
   static const Color neutralButtonForeground = Color(0xFF333333);
   static const Color upgradeButton = Color(0xFFF0C575);
@@ -41,18 +41,18 @@ class AppColors {
   static const Color scoreBand4 = Color(0xFF3BA776); // 85-100%
 
   // Progress Colors
-  static const Color progressBar = Color(0xFF4A6FA5);
-  static const Color progressBarBackground = Color(0xFFD9E8F4);
+  static const Color progressBar = Color(0xFF7A2E2E);
+  static const Color progressBarBackground = Color(0xFFEEDFC4);
   static const Color progressGreen = Color(0xFF3BA776);
-  static const Color progressBlue = Color(0xFF4A6FA5);
+  static const Color progressBlue = Color(0xFF7A2E2E);
   static const Color progressTeal = Color(0xFF26A69A);
   static const Color progressYellow = Color(0xFFE6A23C);
 
   // Footer Button Colors
   static const Color footerButton = Colors.white;
-  static const Color footerButtonForeground = Color(0xFF4A6FA5);
-  static const Color footerButtonBorder = Color(0xFF4A6FA5);
-  static const Color footerButtonSelected = Color(0xFF4A6FA5);
+  static const Color footerButtonForeground = Color(0xFF7A2E2E);
+  static const Color footerButtonBorder = Color(0xFF7A2E2E);
+  static const Color footerButtonSelected = Color(0xFF7A2E2E);
   static const Color footerButtonSelectedForeground = Colors.white;
 }
 

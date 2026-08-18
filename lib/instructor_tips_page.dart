@@ -30,7 +30,7 @@ class _InstructorTipsPageState extends State<InstructorTipsPage> {
           icon: '📋',
         ),
         _ => (
-          color: const Color(0xFF4A6FA5),
+          color: const Color(0xFF7A2E2E),
           label: type.toUpperCase(),
           icon: '•',
         ),

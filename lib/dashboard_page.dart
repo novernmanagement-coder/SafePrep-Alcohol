@@ -197,7 +197,7 @@ class _DashboardPageState extends State<DashboardPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFF4DA3FF), width: 4),
+                border: Border.all(color: const Color(0xFFD9A441), width: 4),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +206,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const Text(
                     'OVERALL SCORE PROGRESS',
                     style: TextStyle(
-                      color: Color(0xFF4DA3FF),
+                      color: Color(0xFFD9A441),
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
@@ -222,7 +222,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(
                     deltaText,
                     style: const TextStyle(
-                      color: Color(0xFF4DA3FF),
+                      color: Color(0xFFD9A441),
                       fontSize: 10,
                     ),
                   ),
@@ -244,7 +244,7 @@ class _DashboardPageState extends State<DashboardPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFF4DA3FF), width: 4),
+                border: Border.all(color: const Color(0xFFD9A441), width: 4),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,7 +253,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const Text(
                     'CURRICULUM PROGRESS',
                     style: TextStyle(
-                      color: Color(0xFF4DA3FF),
+                      color: Color(0xFFD9A441),
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
@@ -263,7 +263,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(
                       color: currPct == 100
                           ? AppColors.scoreBand4
-                          : const Color(0xFF4DA3FF),
+                          : const Color(0xFFD9A441),
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -271,7 +271,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(
                     '$masteredCount of $totalCount categories',
                     style: const TextStyle(
-                      color: Color(0xFF4DA3FF),
+                      color: Color(0xFFD9A441),
                       fontSize: 10,
                     ),
                   ),
@@ -307,11 +307,11 @@ class _DashboardPageState extends State<DashboardPage> {
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0xFF4DA3FF), width: 4),
+          border: Border.all(color: const Color(0xFFD9A441), width: 4),
           boxShadow: (pulseFast || pulseSlow)
               ? [
                   BoxShadow(
-                    color: const Color(0xFF4DA3FF).withValues(alpha: 0.5),
+                    color: const Color(0xFFD9A441).withValues(alpha: 0.5),
                     blurRadius: pulseFast ? 18 : 14,
                     spreadRadius: pulseFast ? 4 : 3,
                   ),
@@ -325,7 +325,7 @@ class _DashboardPageState extends State<DashboardPage> {
             Text(
               category.toUpperCase(),
               style: const TextStyle(
-                color: Color(0xFF4DA3FF),
+                color: Color(0xFFD9A441),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -357,7 +357,7 @@ class _DashboardPageState extends State<DashboardPage> {
               child: ElevatedButton(
                 onPressed: () => _goToStudy(category),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4DA3FF),
+                  backgroundColor: const Color(0xFFD9A441),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
@@ -465,9 +465,9 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1F33),
+        color: const Color(0xFF2B1810),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF4DA3FF), width: 2),
+        border: Border.all(color: const Color(0xFFD9A441), width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,7 +476,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const Text(
             'DID YOU KNOW?',
             style: TextStyle(
-              color: Color(0xFF4DA3FF),
+              color: Color(0xFFD9A441),
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
@@ -520,7 +520,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Text(
                   _masteredExpanded ? '\u25bc' : '\u25b6',
                   style: const TextStyle(
-                    color: Color(0xFF4DA3FF),
+                    color: Color(0xFFD9A441),
                     fontSize: 12,
                   ),
                 ),
@@ -568,7 +568,7 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF2C4A6A), width: 4),
+        border: Border.all(color: const Color(0xFF8C3B3B), width: 4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -577,7 +577,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Text(
             category.toUpperCase(),
             style: const TextStyle(
-              color: Color(0xFF4DA3FF),
+              color: Color(0xFFD9A441),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -601,7 +601,7 @@ class _DashboardPageState extends State<DashboardPage> {
             child: ElevatedButton(
               onPressed: () => _goToStudy(category),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2C4A6A),
+                backgroundColor: const Color(0xFF8C3B3B),
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(
@@ -694,7 +694,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                             ? '\u25bc'
                                             : '\u25b6',
                                         style: const TextStyle(
-                                          color: Color(0xFF4DA3FF),
+                                          color: Color(0xFFD9A441),
                                           fontSize: 12,
                                         ),
                                       ),

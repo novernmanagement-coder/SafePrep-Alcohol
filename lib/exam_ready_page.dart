@@ -52,7 +52,7 @@ class _ExamReadyPageState extends State<ExamReadyPage> {
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF2C4A6A), width: 4),
+        border: Border.all(color: const Color(0xFF8C3B3B), width: 4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +61,7 @@ class _ExamReadyPageState extends State<ExamReadyPage> {
           Text(
             category.toUpperCase(),
             style: const TextStyle(
-              color: Color(0xFF4DA3FF),
+              color: Color(0xFFD9A441),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -213,7 +213,7 @@ class _ExamReadyPageState extends State<ExamReadyPage> {
                                 const Text(
                                   'FINAL EXAM SCORE',
                                   style: TextStyle(
-                                    color: Color(0xFF4DA3FF),
+                                    color: Color(0xFFD9A441),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -243,7 +243,7 @@ class _ExamReadyPageState extends State<ExamReadyPage> {
                                 const Text(
                                   'CATEGORY BREAKDOWN',
                                   style: TextStyle(
-                                    color: Color(0xFF4DA3FF),
+                                    color: Color(0xFFD9A441),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),

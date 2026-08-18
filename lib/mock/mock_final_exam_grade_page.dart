@@ -267,7 +267,7 @@ class MockFinalExamGradePage extends StatelessWidget {
               const SizedBox(height: 4),
               const Text(
                 'SafePrep is an independent prep tool.',
-                style: TextStyle(fontSize: 9, color: Color(0xFF4DA3FF)),
+                style: TextStyle(fontSize: 9, color: Color(0xFFD9A441)),
                 textAlign: TextAlign.center,
               ),
 

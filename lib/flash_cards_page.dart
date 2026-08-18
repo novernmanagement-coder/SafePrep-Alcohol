@@ -173,7 +173,7 @@ class _FlashCardsPageState extends State<FlashCardsPage>
   }
 
   _Suit _suitFor(String category) =>
-      _categorySuits[category] ?? const _Suit('◆', Color(0xFF4A6FA5), '??');
+      _categorySuits[category] ?? const _Suit('◆', Color(0xFF7A2E2E), '??');
 
   String get _progressText {
     if (_cards.isEmpty) return 'Loading...';
