@@ -1,3 +1,5 @@
+import 'csv_loader.dart';
+
 enum TestType { diagnostic, finalExam }
 
 // ── Purchase type ─────────────────────────────────────────────
@@ -62,6 +64,19 @@ class ConceptProgress {
 
   factory ConceptProgress.fromJson(Map<String, dynamic> json) =>
       ConceptProgress(category: json['category'], seen: json['seen']);
+}
+
+/// Captures a mastered question's difficulty tier at the moment it
+/// was earned, so scoring/credit logic doesn't need to reload CSV
+/// data just to know whether a mastered question was Hard.
+class QuestionMasteryRecord {
+  final int difficulty; // 1=easy, 2=medium, 3=hard
+  const QuestionMasteryRecord({required this.difficulty});
+
+  Map<String, dynamic> toJson() => {'difficulty': difficulty};
+
+  factory QuestionMasteryRecord.fromJson(Map<String, dynamic> json) =>
+      QuestionMasteryRecord(difficulty: json['difficulty'] ?? 1);
 }
 
 class AppState {
@@ -136,6 +151,128 @@ class AppState {
   // reset() same as hasSeenRenewalExplainer/hasSeenStudyLanding, so
   // a data reset doesn't let the ask fire a second time.
   bool hasSeenReviewPrompt = false;
+  // ──────────────────────────────────────────────────────────
+
+  // ── Fail-streak safety net (Retro→Proper→Full Study) ─────────────
+  // Per-category, resets on any pass (>=75%) or when the counter is
+  // consumed by a triggered switch — does NOT carry across different
+  // categories.
+  Map<String, int> categoryQuizFailStreak = {};
+
+  // Per-category override that beats the onboarding-derived global
+  // default once the safety net fires. Values: 'proper' or
+  // 'fullStudy'. Absent key = no override.
+  Map<String, String> categoryModeOverride = {};
+  // ──────────────────────────────────────────────────────────
+
+  // ── Study/Quiz toggle-session cache ─────────────────────────
+  // CategoryStudyPage and CategoryQuizPage each pushReplacement to a
+  // brand-new instance of the other when the user taps "Full Study
+  // Mode" / "Quiz Mode" — neither page carries its in-progress state
+  // to the new instance on its own. Without this cache,
+  // CategoryQuizPage's initState re-rolls an entirely new random
+  // 15-question draw every single time it's rebuilt, so bouncing
+  // between modes silently swaps out the quiz (and can repeat
+  // questions the user just answered). This cache lets both pages
+  // resume the same in-progress session instead of starting over.
+  //
+  // Quiz side: the actual drawn+shuffled question list, current
+  // index, and running correct count, keyed by category. Cleared by
+  // clearQuizSession() once a quiz is genuinely completed (see
+  // CategoryQuizPage._showResults), so the NEXT fresh entry into that
+  // category still draws normally.
+  Map<String, List<QuestionModel>> quizSessionQuestions = {};
+  Map<String, int> quizSessionIndex = {};
+  Map<String, int> quizSessionCorrectCount = {};
+
+  void clearQuizSession(String category) {
+    quizSessionQuestions.remove(category);
+    quizSessionIndex.remove(category);
+    quizSessionCorrectCount.remove(category);
+  }
+
+  // Study side: curriculum content order is deterministic (not
+  // randomized like the quiz draw), so only the card position needs
+  // remembering, not the content itself.
+  Map<String, int> studySessionIndex = {};
+  // ──────────────────────────────────────────────────────────
+
+  // ── Question-level mastery ──────────────────────────────────
+  // Distinct from the toggle-session cache above — this IS durable
+  // progress (persisted), not a live in-session artifact.
+  //
+  // category -> questionId -> consecutive-correct streak. Resets to
+  // 0 (entry removed) on any miss; a question is mastered the moment
+  // it hits 3 consecutive correct answers.
+  Map<String, Map<String, int>> questionStreaks = {};
+
+  // category -> questionId -> mastery record. Presence in this map
+  // means the question is retired from that category's live quiz
+  // draw pool. Difficulty is captured at the moment mastery was
+  // earned so scoring never needs to re-touch the CSV.
+  Map<String, Map<String, QuestionMasteryRecord>> masteredQuestions = {};
+
+  /// Call after every answered question in a category quiz (never
+  /// the Final Exam — question-level mastery is category-quiz-only
+  /// by design). Advances or resets the per-question streak; on
+  /// hitting 3 consecutive correct, retires the question from the
+  /// live pool via masteredQuestions.
+  void recordQuestionAnswer({
+    required String category,
+    required String questionId,
+    required int difficulty,
+    required bool correct,
+  }) {
+    if (isQuestionMastered(category, questionId)) return;
+
+    final streaks = questionStreaks.putIfAbsent(category, () => {});
+    if (!correct) {
+      streaks.remove(questionId);
+      return;
+    }
+    final next = (streaks[questionId] ?? 0) + 1;
+    if (next >= 3) {
+      streaks.remove(questionId);
+      masteredQuestions.putIfAbsent(category, () => {})[questionId] =
+          QuestionMasteryRecord(difficulty: difficulty);
+    } else {
+      streaks[questionId] = next;
+    }
+  }
+
+  bool isQuestionMastered(String category, String questionId) =>
+      masteredQuestions[category]?.containsKey(questionId) ?? false;
+
+  int hardMasteredCount(String category) =>
+      masteredQuestions[category]?.values
+          .where((r) => r.difficulty == 3)
+          .length ??
+      0;
+
+  int masteredQuestionCount(String category) =>
+      masteredQuestions[category]?.length ?? 0;
+
+  /// Wipes all question-level mastery/streak data for ONE category —
+  /// its full question pool goes live again. Called automatically
+  /// from two places: (1) the moment a category newly crosses into
+  /// category-level Mastered (see CategoryQuizResultsPage), and (2)
+  /// whenever the user re-enters Study/Quiz for a category that's
+  /// ALREADY mastered (see navigateToStudy() in study_landing_page
+  /// .dart) — re-selecting an already-mastered category is a
+  /// deliberate "start over" signal by design; nothing persists.
+  void clearQuestionMasteryForCategory(String category) {
+    questionStreaks.remove(category);
+    masteredQuestions.remove(category);
+  }
+
+  /// Full wipe, every category — called only from the Final Exam's
+  /// fail-reset path (see FinalStepExamPage._submitExam()), since a
+  /// failed Final Exam invalidates question-level mastery signal
+  /// everywhere, not just in categories that scored low on that exam.
+  void clearAllQuestionMastery() {
+    questionStreaks.clear();
+    masteredQuestions.clear();
+  }
   // ──────────────────────────────────────────────────────────
 
   // ── Readiness Index ───────────────────────────────────────
@@ -350,6 +487,12 @@ class AppState {
     if (!hasStudiedCategory(category)) studiedCategories.add(category);
   }
 
+  void reconcileMasteredStudied() {
+    for (final category in masteredCategories) {
+      markCategoryStudied(category);
+    }
+  }
+
   void markConceptReviewed(String category) {
     curriculumProgress[category] = (curriculumProgress[category] ?? 0) + 1;
   }
@@ -442,6 +585,14 @@ class AppState {
     conceptProgressRecords.clear();
     studyStreak = 0;
     lastLaunchDate = null;
+    categoryQuizFailStreak.clear();
+    categoryModeOverride.clear();
+    quizSessionQuestions.clear();
+    quizSessionIndex.clear();
+    quizSessionCorrectCount.clear();
+    studySessionIndex.clear();
+    questionStreaks.clear();
+    masteredQuestions.clear();
 
     hasUnlockedApp = savedHasUnlocked;
     purchaseType = savedPurchaseType;
@@ -463,6 +614,8 @@ class AppState {
     'hasSeenRenewalExplainer': hasSeenRenewalExplainer,
     'hasSeenStudyLanding': hasSeenStudyLanding,
     'hasSeenReviewPrompt': hasSeenReviewPrompt,
+    'categoryQuizFailStreak': categoryQuizFailStreak,
+    'categoryModeOverride': categoryModeOverride,
     'readinessScore': readinessScore,
     'readinessCoachMessage': readinessCoachMessage,
     'readinessCheerMessage': readinessCheerMessage,
@@ -483,6 +636,17 @@ class AppState {
     'conceptProgressRecords': conceptProgressRecords.map(
       (k, v) => MapEntry(k.toString(), v.toJson()),
     ),
+    'questionStreaks': questionStreaks,
+    'masteredQuestions': masteredQuestions.map(
+      (cat, qmap) =>
+          MapEntry(cat, qmap.map((qid, rec) => MapEntry(qid, rec.toJson()))),
+    ),
+    // quizSessionQuestions / quizSessionIndex / quizSessionCorrectCount /
+    // studySessionIndex are intentionally NOT persisted — they're a
+    // live in-memory toggle cache for the current app session only,
+    // not durable progress. A fresh app launch should always draw a
+    // clean quiz. questionStreaks/masteredQuestions ARE persisted —
+    // this is real long-term mastery progress, not a toggle artifact.
   };
 
   void fromJson(Map<String, dynamic> json) {
@@ -508,6 +672,12 @@ class AppState {
     hasSeenRenewalExplainer = json['hasSeenRenewalExplainer'] ?? false;
     hasSeenStudyLanding = json['hasSeenStudyLanding'] ?? false;
     hasSeenReviewPrompt = json['hasSeenReviewPrompt'] ?? false;
+    categoryQuizFailStreak = Map<String, int>.from(
+      json['categoryQuizFailStreak'] ?? {},
+    );
+    categoryModeOverride = Map<String, String>.from(
+      json['categoryModeOverride'] ?? {},
+    );
     readinessScore = json['readinessScore'] ?? 0;
     readinessCoachMessage =
         json['readinessCoachMessage'] ??
@@ -548,5 +718,22 @@ class AppState {
     conceptProgressRecords = (json['conceptProgressRecords'] as Map? ?? {}).map(
       (k, v) => MapEntry(int.parse(k), ConceptProgress.fromJson(v)),
     );
+
+    questionStreaks = (json['questionStreaks'] as Map? ?? {}).map(
+      (k, v) => MapEntry(k as String, Map<String, int>.from(v as Map)),
+    );
+    masteredQuestions = (json['masteredQuestions'] as Map? ?? {}).map(
+      (cat, qmap) => MapEntry(
+        cat as String,
+        (qmap as Map).map(
+          (qid, rec) => MapEntry(
+            qid as String,
+            QuestionMasteryRecord.fromJson(Map<String, dynamic>.from(rec)),
+          ),
+        ),
+      ),
+    );
+
+    reconcileMasteredStudied();
   }
 }

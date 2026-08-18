@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import 'csv_loader.dart';
 import 'app_state.dart';
@@ -8,6 +9,7 @@ import 'assessment_info_page.dart';
 import 'category_quiz_page.dart';
 import 'mixpanel_service.dart';
 import 'safe_prep_nav_bar.dart';
+import 'onboard/onboard_answers.dart'; // OnboardingAnswers, StudyStyle
 
 class CategoryStudyPage extends StatefulWidget {
   final String category;
@@ -25,9 +27,22 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
   bool _loaded = false;
   String _mode = 'Standard';
 
+  static const String _assessmentPromptKey = 'has_seen_assessment_prompt';
+
+  // ── Toggle state ────────────────────────────────────────────────
+  // Key Points visibility, initialized from the onboarding answer
+  // (only answersOnly starts hidden — see the rule banked this
+  // session: style 2/answersOnly never sees supplementary explanation
+  // content by default), then freely switchable via the toggle row,
+  // same "never locked to the initial choice" pattern as every other
+  // toggle built tonight.
+  late bool _showKeyPoints;
+
   @override
   void initState() {
     super.initState();
+    _showKeyPoints =
+        OnboardingAnswers.instance.studyStyle != StudyStyle.answersOnly;
     _loadCurriculum();
   }
 
@@ -45,6 +60,12 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
     setState(() {
       _queue = all;
       _loaded = true;
+      // Toggle-session cache: resume wherever the user left off if
+      // they just came back from Quiz Mode (or from this same page,
+      // toggling back), instead of always restarting at card 1. See
+      // AppState.studySessionIndex.
+      final savedIndex = _state.studySessionIndex[widget.category] ?? 0;
+      _currentIndex = savedIndex < _queue.length ? savedIndex : 0;
     });
     MixpanelService.instance.track(
       'study_started',
@@ -73,25 +94,227 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
         .toList();
   }
 
+  /// Shows the assessment recommendation dialog once, then navigates
+  /// to [destination]. If they've already seen it, navigates directly.
+  Future<void> _navigateWithPrompt(Widget destination) async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeen = prefs.getBool(_assessmentPromptKey) ?? false;
+
+    if (!mounted) return;
+
+    if (!hasSeen) {
+      await prefs.setBool(_assessmentPromptKey, true);
+
+      MixpanelService.instance.track(
+        'assessment_prompt_shown',
+        properties: {'app_name': 'SA', 'from_category': widget.category},
+      );
+
+      final takeAssessment = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Dialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: AppColors.cardBorder),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.assessment_outlined,
+                  size: 32,
+                  color: AppColors.primaryButton,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Want a more complete study plan?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.strongText,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Your plan is based on 10 diagnostic questions. '
+                  'A full 30-question assessment will map every '
+                  'category and adapt as you go.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.bodyText,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryButton,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.buttonCornerRadius,
+                        ),
+                      ),
+                    ),
+                    child: const Text(
+                      'Take the assessment',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => Navigator.pop(ctx, false),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'No thanks, keep studying',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.subtleText,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (takeAssessment == true) {
+        MixpanelService.instance.track(
+          'assessment_prompt_accepted',
+          properties: {'app_name': 'SA'},
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AssessmentInfoPage()),
+        );
+        return;
+      }
+
+      MixpanelService.instance.track(
+        'assessment_prompt_declined',
+        properties: {'app_name': 'SA'},
+      );
+    }
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => destination),
+    );
+  }
+
   void _goNext() {
     if (_currentIndex == _queue.length - 1) {
       MixpanelService.instance.track(
         'study_completed',
         properties: {'category': widget.category, 'mode': _mode},
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CategoryQuizPage(category: widget.category),
-        ),
-      );
+      // Deck genuinely finished — clear the saved position so the
+      // next fresh entry into this category's study mode starts over
+      // at card 1 rather than resuming a completed deck.
+      _state.studySessionIndex.remove(widget.category);
+      _navigateWithPrompt(CategoryQuizPage(category: widget.category));
       return;
     }
     setState(() => _currentIndex++);
+    _state.studySessionIndex[widget.category] = _currentIndex;
   }
 
   void _goPrevious() {
-    if (_currentIndex > 0) setState(() => _currentIndex--);
+    if (_currentIndex > 0) {
+      setState(() => _currentIndex--);
+      _state.studySessionIndex[widget.category] = _currentIndex;
+    }
+  }
+
+  // Direct jump to the quiz — bypasses the assessment-upsell prompt
+  // deliberately, since that dialog is scoped to natural completion/
+  // exit points, not to a manual mode switch. Jarring to interrupt a
+  // toggle tap with an unrelated upsell.
+  void _goQuizMode() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CategoryQuizPage(category: widget.category),
+      ),
+    );
+  }
+
+  void _toggleKeyPoints() {
+    setState(() => _showKeyPoints = !_showKeyPoints);
+  }
+
+  Widget _buildToggleRow() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        spacing: 8,
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _goQuizMode,
+              icon: const Icon(Icons.bolt_outlined, size: 15),
+              label: const Text(
+                'Quiz Mode',
+                style: TextStyle(fontSize: 11.5),
+                overflow: TextOverflow.ellipsis,
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.bodyText,
+                side: BorderSide(color: AppColors.cardBorder),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _toggleKeyPoints,
+              icon: Icon(
+                _showKeyPoints
+                    ? Icons.notes_outlined
+                    : Icons.short_text_outlined,
+                size: 15,
+              ),
+              label: Text(
+                _showKeyPoints ? 'Q&A&E' : 'Q&A',
+                style: const TextStyle(fontSize: 11.5),
+                overflow: TextOverflow.ellipsis,
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.bodyText,
+                side: BorderSide(color: AppColors.cardBorder),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildHeader() {
@@ -104,10 +327,7 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               GestureDetector(
-                onTap: () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const DashboardPage()),
-                ),
+                onTap: () => _navigateWithPrompt(const DashboardPage()),
                 child: Row(
                   children: [
                     Text(
@@ -374,6 +594,8 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
                     children: [
                       _buildHeader(),
 
+                      _buildToggleRow(),
+
                       isComplete || content == null
                           ? _buildCompletionCard()
                           : _buildConceptCard(content),
@@ -456,12 +678,7 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
                             }
                             _state.markCategoryStudied(widget.category);
                             AppStatePersistence.save();
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const DashboardPage(),
-                              ),
-                            );
+                            _navigateWithPrompt(const DashboardPage());
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryButton,
@@ -478,7 +695,7 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
 
                       const SizedBox(height: 10),
 
-                      if (!isComplete && keyPoints.isNotEmpty)
+                      if (!isComplete && _showKeyPoints && keyPoints.isNotEmpty)
                         _buildKeyPointsCard(keyPoints),
                     ],
                   ),
