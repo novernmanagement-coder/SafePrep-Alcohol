@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'app_state.dart';
 import 'app_state_persistence.dart';
@@ -16,11 +17,21 @@ const String kProductUnlockApp =
     'com.geraldmiller.safeprepalcohol.lifetime'; // $9.99 — lifetime
 const String kProductUpgrade =
     'com.geraldmiller.safeprepalcohol.upgrade'; // $4.99 — upgrade to lifetime
+const String kProductRenewal =
+    'com.geraldmiller.safeprepalcohol.renewalweek'; // $2.99 — +7 days, existing purchasers only
+// TODO: confirm this product ID has actually been created in App
+// Store Connect before shipping — buyRenewal() will resolve
+// productNotFound until it exists there. IMPORTANT: must be created
+// as a CONSUMABLE product type, not non-consumable — it's meant to
+// be bought repeatedly, and _purchase() below now routes it through
+// buyConsumable() specifically because of that. (Matches the same
+// TODO in SafePrep Manager's iap_service.dart.)
 
 // How long a buy* call will wait for StoreKit to resolve (purchased,
 // canceled, or errored) before giving up and returning IAPResult.timeout.
 // Prevents a nav bar / button loading spinner from getting stuck forever
-// if the purchase stream never emits for some edge case.
+// if the purchase stream never emits for some edge case (e.g. app
+// backgrounded mid-purchase and StoreKit's callback gets lost).
 const Duration _purchaseTimeout = Duration(seconds: 90);
 
 // ─────────────────────────────────────────────────────────────────
@@ -37,13 +48,45 @@ class IAPService {
   ProductDetails? _fourteenDayProduct;
   ProductDetails? _unlockProduct;
   ProductDetails? _upgradeProduct;
+  ProductDetails? _renewalProduct;
 
   bool _available = false;
   bool get isAvailable => _available;
 
   // Tracks in-flight purchases so _onPurchaseUpdate can resolve the
-  // Future that the calling buy* method is awaiting. Keyed by product ID.
+  // Future that the calling buy* method is awaiting. Keyed by product ID
+  // — this app only ever has one purchase in flight per product at a
+  // time, since buy buttons disable themselves while loading.
   final Map<String, Completer<IAPResult>> _pendingPurchases = {};
+
+  // ── Sandbox / TestFlight detection ─────────────────────────
+  // Distinguishes real App Store purchases from TestFlight/sandbox
+  // ones so analytics (Mixpanel) can be filtered clean of test data.
+  // TestFlight purchases use a real Apple ID but resolve through
+  // Apple's sandbox backend, and StoreKit/in_app_purchase gives no
+  // Dart-level signal for this — the only reliable check is whether
+  // the on-device App Store receipt file is named "sandboxReceipt"
+  // instead of the production receipt name, which requires a native
+  // platform channel call (see ios/Runner/AppDelegate.swift).
+  static const _receiptChannel = MethodChannel(
+    'com.geraldmiller.safeprepalcohol/receipt',
+  );
+  bool? _isSandboxCached;
+
+  Future<bool> _isSandboxEnvironment() async {
+    if (_isSandboxCached != null) return _isSandboxCached!;
+    try {
+      _isSandboxCached =
+          await _receiptChannel.invokeMethod<bool>('isSandboxReceipt') ?? false;
+    } catch (e) {
+      debugPrint('Sandbox receipt check failed: $e');
+      // Fail safe — if the check errors for any reason, assume
+      // production rather than silently mislabeling real sales as
+      // test data.
+      _isSandboxCached = false;
+    }
+    return _isSandboxCached!;
+  }
 
   // ── Initialization ──────────────────────────────────────────
   Future<void> initialize() async {
@@ -65,6 +108,7 @@ class IAPService {
       kProductFourteenDay,
       kProductUnlockApp,
       kProductUpgrade,
+      kProductRenewal,
     });
 
     if (response.error != null) {
@@ -86,6 +130,9 @@ class IAPService {
         case kProductUpgrade:
           _upgradeProduct = p;
           break;
+        case kProductRenewal:
+          _renewalProduct = p;
+          break;
       }
     }
 
@@ -100,11 +147,17 @@ class IAPService {
 
   // ── Purchase stream handler ─────────────────────────────────
   // This is where the ACTUAL outcome of a purchase becomes known —
-  // buyNonConsumable() only confirms the request was submitted, not
-  // whether the person completed, canceled, or hit an error in the
-  // App Store sheet. Every outcome here both resolves the Completer
-  // the calling buy* method is waiting on AND logs a Mixpanel event.
+  // buyNonConsumable()/buyConsumable() only confirm the request was
+  // submitted, not whether the person completed, canceled, or hit an
+  // error in the App Store sheet. Every outcome here both resolves
+  // the Completer the calling buy* method is waiting on AND logs a
+  // Mixpanel event, so purchase outcomes are visible in analytics,
+  // not just taps. Every logged event also carries `is_test_purchase`
+  // so TestFlight/sandbox activity can be filtered out of real
+  // conversion data.
   void _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
+    final isSandbox = await _isSandboxEnvironment();
+
     for (final purchase in purchases) {
       final completer = _pendingPurchases[purchase.productID];
 
@@ -117,6 +170,7 @@ class IAPService {
             properties: {
               'product_id': purchase.productID,
               'restored': purchase.status == PurchaseStatus.restored,
+              'is_test_purchase': isSandbox,
             },
           );
           completer?.complete(IAPResult.success);
@@ -130,6 +184,7 @@ class IAPService {
             properties: {
               'product_id': purchase.productID,
               'error': purchase.error?.message ?? 'unknown',
+              'is_test_purchase': isSandbox,
             },
           );
           completer?.complete(IAPResult.error);
@@ -140,7 +195,10 @@ class IAPService {
           debugPrint('IAP canceled: ${purchase.productID}');
           MixpanelService.instance.track(
             'purchase_canceled',
-            properties: {'product_id': purchase.productID},
+            properties: {
+              'product_id': purchase.productID,
+              'is_test_purchase': isSandbox,
+            },
           );
           completer?.complete(IAPResult.canceled);
           _pendingPurchases.remove(purchase.productID);
@@ -162,6 +220,32 @@ class IAPService {
 
   Future<void> _handleSuccess(PurchaseDetails purchase) async {
     final state = AppState();
+
+    // Renewal is handled separately from every other product below —
+    // it does NOT reset purchaseDate to now (that would hand back a
+    // full fresh 7 days regardless of how little time was left,
+    // silently deleting whatever they were about to lose). Instead
+    // it anchors the new purchaseDate at the CURRENT expiry (or now,
+    // only if access had already fully lapsed) so the +7 days from
+    // that point preserves any remaining time, per the same
+    // "currentExpiry + 7, not now + 7" decision as Manager.
+    if (purchase.productID == kProductRenewal) {
+      final currentExpiry = state.expiryDate;
+      final anchor =
+          (currentExpiry != null && currentExpiry.isAfter(DateTime.now()))
+          ? currentExpiry
+          : DateTime.now();
+      state.purchaseDate = anchor;
+      // purchaseType stays sevenDay — a renewal doesn't change the
+      // plan shape, just extends it.
+      state.purchaseType = PurchaseType.sevenDay;
+      // Let the HomePage renewal explainer fire again on a future
+      // cycle instead of staying permanently seen after one renewal.
+      state.hasSeenRenewalExplainer = false;
+      await AppStatePersistence.save();
+      debugPrint('IAP renewal success: new expiry ${state.expiryDate}');
+      return;
+    }
 
     // Clear trial history on first purchase only
     if (!state.hasUnlockedApp) {
@@ -199,8 +283,22 @@ class IAPService {
   // Shared purchase flow used by every buy* method below. Submits the
   // request, then WAITS for _onPurchaseUpdate to actually resolve it
   // (success / canceled / error) instead of returning as soon as the
-  // App Store sheet is requested.
-  Future<IAPResult> _purchase(ProductDetails? Function() getProduct) async {
+  // App Store sheet is requested. That's the fix for buttons appearing
+  // to "do nothing" when a user backs out of the purchase sheet — the
+  // caller now genuinely knows what happened.
+  //
+  // isConsumable determines which StoreKit call gets used —
+  // buyNonConsumable() for one-time-forever products (seven day,
+  // fourteen day, unlock, upgrade — all still non-consumable, matches
+  // how they were purchased before) vs buyConsumable() for products
+  // meant to be bought repeatedly (currently just the renewal). This
+  // matters beyond semantics: Apple's own StoreKit validation can
+  // reject or mishandle a repeat purchase attempt on a product bought
+  // through the wrong call, so it's not just a style choice.
+  Future<IAPResult> _purchase(
+    ProductDetails? Function() getProduct, {
+    bool isConsumable = false,
+  }) async {
     if (!_available) return IAPResult.storeUnavailable;
 
     var product = getProduct();
@@ -214,9 +312,12 @@ class IAPService {
     _pendingPurchases[product.id] = completer;
 
     try {
-      await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: product),
-      );
+      final purchaseParam = PurchaseParam(productDetails: product);
+      if (isConsumable) {
+        await _iap.buyConsumable(purchaseParam: purchaseParam);
+      } else {
+        await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+      }
     } catch (e) {
       debugPrint('IAP buy error: $e');
       _pendingPurchases.remove(product.id);
@@ -240,7 +341,18 @@ class IAPService {
 
   Future<IAPResult> buyUpgrade() => _purchase(() => _upgradeProduct);
 
+  Future<IAPResult> buyRenewal() =>
+      _purchase(() => _renewalProduct, isConsumable: true);
+
   // ── Restore ─────────────────────────────────────────────────
+  // NOTE: restorePurchases() only restores non-consumables (Apple
+  // doesn't track consumable purchase history for restore) — the
+  // renewal product being consumable means a reinstall/new-device
+  // user will NOT get their renewal back via Restore Purchases, only
+  // their original sevenDay/fourteenDay/unlock/upgrade purchase.
+  // That matches how a consumable extension is expected to behave
+  // (it's spent, not owned), but worth knowing if support questions
+  // come up about "I renewed and it didn't restore."
   Future<void> restorePurchases() async {
     if (!_available) return;
     await _iap.restorePurchases();
@@ -251,13 +363,10 @@ class IAPService {
   String get fourteenDayPrice => _fourteenDayProduct?.price ?? '\$8.99';
   String get unlockPrice => _unlockProduct?.price ?? '\$9.99';
   String get upgradePrice => _upgradeProduct?.price ?? '\$4.99';
+  String get renewalPrice => _renewalProduct?.price ?? '\$2.99';
 }
 
 // ── Result enum ──────────────────────────────────────────────
-// NOTE: this replaces the old enum, which had `initiated` — meaning
-// "request submitted," not "purchase resolved." Every buy* call site
-// must be updated: `success` now means the purchase actually completed;
-// there is no longer a value that means "we don't know yet."
 enum IAPResult {
   success,
   canceled,

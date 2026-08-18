@@ -86,17 +86,21 @@ class AppState {
       purchaseType == PurchaseType.fourteenDay;
   bool get canUpgradeToLifetime => isTimeLimited && hasUnlockedApp;
 
-  bool get isExpired {
-    if (!isTimeLimited || purchaseDate == null) return false;
+  DateTime? get expiryDate {
+    if (!isTimeLimited || purchaseDate == null) return null;
     final days = purchaseType == PurchaseType.sevenDay ? 7 : 14;
-    final expiry = purchaseDate!.add(Duration(days: days));
+    return purchaseDate!.add(Duration(days: days));
+  }
+
+  bool get isExpired {
+    final expiry = expiryDate;
+    if (expiry == null) return false;
     return DateTime.now().isAfter(expiry);
   }
 
   int? get daysRemaining {
-    if (!isTimeLimited || purchaseDate == null) return null;
-    final days = purchaseType == PurchaseType.sevenDay ? 7 : 14;
-    final expiry = purchaseDate!.add(Duration(days: days));
+    final expiry = expiryDate;
+    if (expiry == null) return null;
     final remaining = expiry.difference(DateTime.now()).inDays;
     return remaining < 0 ? 0 : remaining;
   }
@@ -109,6 +113,13 @@ class AppState {
   // purchase fields do. Same fix as SafePrep Manager — see App Manual
   // §16.2.
   bool trialStarted = false;
+  // ──────────────────────────────────────────────────────────
+
+  // ── Renewal explainer ─────────────────────────────────────────
+  // True once the user has seen the one-time explainer describing how
+  // the renewal purchase works. Ported from Manager — see
+  // RenewPage/HomePage renewal button.
+  bool hasSeenRenewalExplainer = false;
   // ──────────────────────────────────────────────────────────
 
   // ── Readiness Index ───────────────────────────────────────
@@ -384,6 +395,7 @@ class AppState {
     final savedPurchaseType = purchaseType;
     final savedPurchaseDate = purchaseDate;
     final savedTrialStarted = trialStarted;
+    final savedHasSeenRenewalExplainer = hasSeenRenewalExplainer;
 
     userName = '';
     hasSeenIntro = false;
@@ -417,6 +429,7 @@ class AppState {
     purchaseType = savedPurchaseType;
     purchaseDate = savedPurchaseDate;
     trialStarted = savedTrialStarted;
+    hasSeenRenewalExplainer = savedHasSeenRenewalExplainer;
   }
 
   Map<String, dynamic> toJson() => {
@@ -427,6 +440,7 @@ class AppState {
     'purchaseType': purchaseType.name,
     'purchaseDate': purchaseDate?.toIso8601String(),
     'trialStarted': trialStarted,
+    'hasSeenRenewalExplainer': hasSeenRenewalExplainer,
     'readinessScore': readinessScore,
     'readinessCoachMessage': readinessCoachMessage,
     'readinessCheerMessage': readinessCheerMessage,
@@ -469,6 +483,7 @@ class AppState {
         ? DateTime.parse(json['purchaseDate'])
         : null;
     trialStarted = json['trialStarted'] ?? false;
+    hasSeenRenewalExplainer = json['hasSeenRenewalExplainer'] ?? false;
     readinessScore = json['readinessScore'] ?? 0;
     readinessCoachMessage =
         json['readinessCoachMessage'] ??
