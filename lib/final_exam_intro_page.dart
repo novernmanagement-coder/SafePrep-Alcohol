@@ -130,7 +130,7 @@ class _FinalExamIntroPageState extends State<FinalExamIntroPage> {
                       textAlign: TextAlign.center,
                     ),
                     Text(
-                      '90 questions covering everything in the ServSafe® curriculum.',
+                      '40 questions covering everything in the ServSafe® Alcohol curriculum.',
                       style: TextStyle(
                         fontSize: AppFonts.body,
                         color: AppColors.subtleText,

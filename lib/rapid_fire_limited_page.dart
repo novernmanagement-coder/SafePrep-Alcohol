@@ -946,7 +946,7 @@ class _RapidFireLimitedPageState extends State<RapidFireLimitedPage>
                 ),
               ),
               child: const Text(
-                'Unlock SafePrep  \u2014  \$4.99',
+                'Unlock SafePrep-Alcohol  \u2014  \$4.99',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),
@@ -1266,7 +1266,7 @@ class _RapidFireLimitedPageState extends State<RapidFireLimitedPage>
                 ),
               ),
               child: const Text(
-                'Unlock SafePrep  \u2014  \$4.99',
+                'Unlock SafePrep-Alcohol  \u2014  \$4.99',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),

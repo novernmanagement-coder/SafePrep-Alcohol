@@ -55,7 +55,7 @@ class _OnboardKnowledgeLevelState extends State<OnboardKnowledgeLevel> {
     ),
     _LevelOption(
       level: KnowledgeLevel.newToServSafe,
-      label: 'New to ServSafe',
+      label: 'New to ServSafe Alcohol',
       subtitle: 'Starting from the beginning',
     ),
   ];

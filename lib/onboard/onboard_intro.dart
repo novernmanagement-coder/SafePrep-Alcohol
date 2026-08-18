@@ -8,7 +8,7 @@ import 'onboard_trust.dart';
 /// Screen 1 of the onboarding funnel — authority and trust.
 ///
 /// One job: establish that whoever built this app knows the exam cold.
-/// Two stat tiles up top, a 500+ tile, and — appearing after a 2-second
+/// Two stat tiles up top, a 175+ tile, and — appearing after a 2-second
 /// beat — FSME introducing himself in the slot beside it. Then the
 /// full-width SafePrep System box.
 ///
@@ -72,8 +72,8 @@ class _OnboardIntroState extends State<OnboardIntro>
       '\u2014 oops. Didn\u2019t see you come in.',
     ),
     _FsmeLine(
-      '\u2026Ahem \u2014 \u201CWelcome to SafePrep. We will prepare you '
-      'for the ServSafe exam.\u201D',
+      '\u2026Ahem \u2014 \u201CWelcome to SafePrep Alcohol. We will '
+      'prepare you for the ServSafe Alcohol exam.\u201D',
     ),
   ];
 
@@ -241,13 +241,13 @@ class _OnboardIntroState extends State<OnboardIntro>
 
               const SizedBox(height: 10),
 
-              // Bottom row: 500+ tile beside the FSME intro tile,
+              // Bottom row: 175+ tile beside the FSME intro tile,
               // equal height.
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: _statTile('500+', 'targeted questions')),
+                    Expanded(child: _statTile('175+', 'targeted questions')),
                     const SizedBox(width: 10),
                     Expanded(child: _fsmeTile()),
                   ],
@@ -267,7 +267,7 @@ class _OnboardIntroState extends State<OnboardIntro>
                   children: [
                     Text(
                       'Built by Certified ServSafe\u00AE Instructors '
-                      'and Registered Proctors.\n'
+                      'and Registered Proctors in the SafePrep system.\n'
                       'If it\u2019s not on the test, it\u2019s not in here.',
                       textAlign: TextAlign.center,
                       style: TextStyle(

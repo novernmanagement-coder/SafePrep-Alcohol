@@ -192,8 +192,8 @@ class _OnboardPaywallState extends State<OnboardPaywall> {
               const SizedBox(height: 8),
 
               Text(
-                'Unlimited quizzes, 500+ questions,\n'
-                'a full 90-question exam.',
+                'Unlimited quizzes, 175+ questions,\n'
+                'a full 40-question exam.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12.5,
@@ -235,7 +235,7 @@ class _OnboardPaywallState extends State<OnboardPaywall> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Unlock SafePrep \u2014 $_price',
+                              'Unlock SafePrep-Alcohol \u2014 $_price',
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
