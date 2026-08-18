@@ -122,6 +122,22 @@ class AppState {
   bool hasSeenRenewalExplainer = false;
   // ──────────────────────────────────────────────────────────
 
+  // ── Study landing modal ─────────────────────────────────────
+  // One-time, GLOBAL (not per-category) flag — fires once on the
+  // user's first-ever entry into the study module, then every
+  // subsequent entry skips straight to CategoryStudyPage/
+  // CategoryQuizPage. See navigateToStudy() in study_landing_page.dart.
+  bool hasSeenStudyLanding = false;
+  // ──────────────────────────────────────────────────────────
+
+  // ── Final Exam review prompt (FSME) ──────────────────────────
+  // One-time, ever — fires once on a Final Exam pass at 85%+ (see
+  // FinalExamGradePage / ReviewPromptDialog). Preserved across
+  // reset() same as hasSeenRenewalExplainer/hasSeenStudyLanding, so
+  // a data reset doesn't let the ask fire a second time.
+  bool hasSeenReviewPrompt = false;
+  // ──────────────────────────────────────────────────────────
+
   // ── Readiness Index ───────────────────────────────────────
   int readinessScore = 0;
   String readinessCoachMessage =
@@ -396,6 +412,8 @@ class AppState {
     final savedPurchaseDate = purchaseDate;
     final savedTrialStarted = trialStarted;
     final savedHasSeenRenewalExplainer = hasSeenRenewalExplainer;
+    final savedHasSeenStudyLanding = hasSeenStudyLanding;
+    final savedHasSeenReviewPrompt = hasSeenReviewPrompt;
 
     userName = '';
     hasSeenIntro = false;
@@ -430,6 +448,8 @@ class AppState {
     purchaseDate = savedPurchaseDate;
     trialStarted = savedTrialStarted;
     hasSeenRenewalExplainer = savedHasSeenRenewalExplainer;
+    hasSeenStudyLanding = savedHasSeenStudyLanding;
+    hasSeenReviewPrompt = savedHasSeenReviewPrompt;
   }
 
   Map<String, dynamic> toJson() => {
@@ -441,6 +461,8 @@ class AppState {
     'purchaseDate': purchaseDate?.toIso8601String(),
     'trialStarted': trialStarted,
     'hasSeenRenewalExplainer': hasSeenRenewalExplainer,
+    'hasSeenStudyLanding': hasSeenStudyLanding,
+    'hasSeenReviewPrompt': hasSeenReviewPrompt,
     'readinessScore': readinessScore,
     'readinessCoachMessage': readinessCoachMessage,
     'readinessCheerMessage': readinessCheerMessage,
@@ -484,6 +506,8 @@ class AppState {
         : null;
     trialStarted = json['trialStarted'] ?? false;
     hasSeenRenewalExplainer = json['hasSeenRenewalExplainer'] ?? false;
+    hasSeenStudyLanding = json['hasSeenStudyLanding'] ?? false;
+    hasSeenReviewPrompt = json['hasSeenReviewPrompt'] ?? false;
     readinessScore = json['readinessScore'] ?? 0;
     readinessCoachMessage =
         json['readinessCoachMessage'] ??
