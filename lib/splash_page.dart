@@ -51,6 +51,16 @@ class _SplashPageState extends State<SplashPage> {
   // already taken the user down the debug path.
   bool _navigated = false;
 
+  // True while the debug access-code dialog is on screen. The hold
+  // timer keeps running in real time underneath (it's a plain
+  // Future.delayed, nothing pauses it), but the auto-navigate that
+  // fires once it elapses waits on this flag before actually leaving
+  // the splash screen — otherwise typing a multi-character access
+  // code took longer than the 5-15s hold and the auto-navigate would
+  // yank the dialog away mid-entry. The visible countdown text is
+  // frozen the same way, in _startDisplayTicker.
+  bool _dialogOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +87,9 @@ class _SplashPageState extends State<SplashPage> {
   void _startDisplayTicker() {
     _displayTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
+      // Freeze the visible countdown while the debug dialog is open —
+      // otherwise it ticks down to 0 and sits there while typing.
+      if (_dialogOpen) return;
       setState(() => _secondsElapsed++);
     });
   }
@@ -101,6 +114,14 @@ class _SplashPageState extends State<SplashPage> {
     // Hard-lock hold — no skip, matches the visible countdown above.
     await Future.delayed(Duration(seconds: holdSeconds));
     if (!mounted || _navigated) return;
+
+    // If the debug access-code dialog is up when the hold elapses, hold
+    // off leaving the splash screen until it's closed one way or the
+    // other — see _dialogOpen's doc comment.
+    while (_dialogOpen) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (!mounted || _navigated) return;
+    }
 
     // Clear stale debug state
     if (state.hasUnlockedApp && state.purchaseDate == null) {
@@ -174,7 +195,13 @@ class _SplashPageState extends State<SplashPage> {
   /// the normal timed navigation continues underneath if it hasn't
   /// already fired.
   Future<void> _debugEntry() async {
-    final entered = await _promptAccessCode();
+    _dialogOpen = true;
+    final String? entered;
+    try {
+      entered = await _promptAccessCode();
+    } finally {
+      _dialogOpen = false;
+    }
     if (!mounted || _navigated) return;
 
     if (entered == _accessCode) {
