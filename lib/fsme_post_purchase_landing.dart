@@ -114,7 +114,7 @@ class _FsmePostPurchaseLandingState extends State<FsmePostPurchaseLanding>
       label: 'The Final Exam',
       icon: Icons.workspace_premium_outlined,
       line:
-          "The Final Exam: your Ahab \u2014 this is the whale. 90 "
+          "The Final Exam: You Are Ahab \u2014 this is the whale. 40 "
           "questions, scored exactly like the real ServSafe exam. "
           "And here's the best part: whatever your results, I use "
           "them to hone your curriculum.",

@@ -29,6 +29,34 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
 
   static const String _assessmentPromptKey = 'has_seen_assessment_prompt';
 
+  // Every Recovery-mode row in ServSafeCurriculum.csv is baked in with
+  // the exact same opener, which reads fine once but gets repetitive
+  // fast once you've missed a few concepts in a row. Rather than hand-
+  // editing 131 CSV rows, strip the fixed prefix here and rotate
+  // through a handful of alternates, keyed off the concept's id so a
+  // given concept always reads the same way but back-to-back concepts
+  // don't repeat identical wording.
+  static const String _recoveryPrefix =
+      "Let's slow down and go over this one carefully: ";
+
+  static const List<String> _recoveryOpeners = [
+    "Let's slow down and go over this one carefully:",
+    "Let's take this one more time, carefully:",
+    "One more pass — let's nail this down:",
+    "Let's really dig into this one:",
+    "Take a breath — here it is again:",
+    "Let's go over this again, step by step:",
+  ];
+
+  String _displayedContent(CurriculumModel content) {
+    if (!content.content.startsWith(_recoveryPrefix)) {
+      return content.content;
+    }
+    final rest = content.content.substring(_recoveryPrefix.length);
+    final opener = _recoveryOpeners[content.id % _recoveryOpeners.length];
+    return '$opener $rest';
+  }
+
   // ── Toggle state ────────────────────────────────────────────────
   // Key Points visibility, initialized from the onboarding answer
   // (only answersOnly starts hidden — see the rule banked this
@@ -85,7 +113,7 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
           .where((p) => p.isNotEmpty)
           .toList();
     }
-    return content.content
+    return _displayedContent(content)
         .split('.')
         .map((s) => s.trim())
         .where((s) => s.length > 8)
@@ -450,7 +478,7 @@ class _CategoryStudyPageState extends State<CategoryStudyPage> {
           ),
           Divider(color: AppColors.divider),
           Text(
-            content.content,
+            _displayedContent(content),
             style: TextStyle(
               fontSize: 13,
               color: AppColors.bodyText,
