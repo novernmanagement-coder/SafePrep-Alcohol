@@ -9,23 +9,24 @@ import 'mixpanel_service.dart';
 // ─────────────────────────────────────────────────────────────────
 // Product IDs — must match App Store Connect exactly
 // ─────────────────────────────────────────────────────────────────
+// The original .sevenday / .renewalweek IDs below were typo'd/mismatched
+// in App Store Connect (.sevenda, .fourteen — missing letters) and had
+// never actually been purchasable. Since Apple permanently blocks reuse
+// of any Product ID string once it's existed, both were recreated under
+// new IDs instead of being fixed in place.
 const String kProductSevenDay =
-    'com.geraldmiller.safeprepalcohol.sevenday'; // $4.99 — 7 days
+    'com.geraldmiller.safeprepalcohol.sevendays'; // $4.99 — 7 days
 const String kProductFourteenDay =
-    'com.geraldmiller.safeprepalcohol.fourteenday'; // $8.99 — 14 days
+    'com.geraldmiller.safeprepalcohol.fourteenday'; // $8.99 — 14 days (retired — see home_page.dart preview-flow notes)
 const String kProductUnlockApp =
-    'com.geraldmiller.safeprepalcohol.lifetime'; // $9.99 — lifetime
+    'com.geraldmiller.safeprepalcohol.lifetime'; // $9.99 — lifetime (retired)
 const String kProductUpgrade =
-    'com.geraldmiller.safeprepalcohol.upgrade'; // $4.99 — upgrade to lifetime
+    'com.geraldmiller.safeprepalcohol.upgrade'; // $4.99 — upgrade to lifetime (retired)
 const String kProductRenewal =
-    'com.geraldmiller.safeprepalcohol.renewalweek'; // $2.99 — +7 days, existing purchasers only
-// TODO: confirm this product ID has actually been created in App
-// Store Connect before shipping — buyRenewal() will resolve
-// productNotFound until it exists there. IMPORTANT: must be created
-// as a CONSUMABLE product type, not non-consumable — it's meant to
-// be bought repeatedly, and _purchase() below now routes it through
-// buyConsumable() specifically because of that. (Matches the same
-// TODO in SafePrep Manager's iap_service.dart.)
+    'com.geraldmiller.safeprepalcohol.renew'; // $2.99 — +7 days, existing purchasers only.
+// kProductRenewal is CONSUMABLE in App Store Connect (bought repeatedly),
+// unlike the others — _purchase() below routes it through
+// buyConsumable() specifically because of that.
 
 // How long a buy* call will wait for StoreKit to resolve (purchased,
 // canceled, or errored) before giving up and returning IAPResult.timeout.
