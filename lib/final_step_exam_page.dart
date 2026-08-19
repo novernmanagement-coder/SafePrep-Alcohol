@@ -23,19 +23,15 @@ class _FinalStepExamPageState extends State<FinalStepExamPage> {
   int _currentIndex = 0;
   bool _loaded = false;
 
-  // Category weights remapped to SafePrep Alcohol's real six categories
-  // (was previously keyed to Manager's food-safety category names, which
-  // caused every filter to return zero matches — "No questions found.").
-  // Weights are an even-ish starting split; adjust based on desired
-  // emphasis per category.
-  static const Map<String, double> categoryWeights = {
-    'Legal Liability': 0.20,
-    'BAC & Physiology': 0.19,
-    'Intervention & Refusal': 0.17,
-    'Signs of Intoxication': 0.15,
-    'Responsible Service': 0.15,
-    'ID Verification': 0.14,
-  };
+  // Category weights come directly from AppState.categoryExamWeights —
+  // the single source of truth for category weighting (same fix already
+  // applied to readiness_engine.dart). This file used to keep its own
+  // private copy, which happened to still match at the time this was
+  // caught, but was a silent-drift risk: if the weighting is ever tuned
+  // in one place and not the other, the final exam's category mix and
+  // the readiness score would quietly disagree.
+  static Map<String, double> get categoryWeights =>
+      AppState.categoryExamWeights;
 
   // Confirmed: the ServSafe Alcohol final exam is 40 questions.
   static const int totalQuestions = 40;
