@@ -25,7 +25,11 @@ import UIKit
     // FlutterPluginRegistrar, obtained via registrar(forPlugin:). "Receipt
     // Channel" here is just a unique key to claim a registrar slot, the
     // same way any real Flutter plugin bootstraps its own method channel.
-    let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ReceiptChannel")
+    // registrar(forPlugin:) returns an Optional, so it has to be unwrapped
+    // before .messenger is reachable on it.
+    guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ReceiptChannel") else {
+      return
+    }
     let receiptChannel = FlutterMethodChannel(
         name: "com.geraldmiller.safeprepalcohol/receipt",
         binaryMessenger: registrar.messenger
