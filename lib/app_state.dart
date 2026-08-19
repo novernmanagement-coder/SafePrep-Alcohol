@@ -412,6 +412,15 @@ class AppState {
   void saveCategoryQuizScore(String category, int percent) {
     categoryQuizScores[category] = percent;
     categoryBaselineScores.putIfAbsent(category, () => percent);
+    // Mastering a category straight from an assessment (skipping the
+    // study cards entirely) used to leave it out of studiedCategories
+    // until the next app launch reconciled it via reconcileMasteredStudied()
+    // in fromJson — so the Curriculum trophy count didn't include it
+    // until a restart. Reconcile immediately instead, so mastering a
+    // category always counts it toward Curriculum right away too.
+    if (percent >= masteryThreshold) {
+      markCategoryStudied(category);
+    }
   }
 
   int getCategoryScore(String category) {
