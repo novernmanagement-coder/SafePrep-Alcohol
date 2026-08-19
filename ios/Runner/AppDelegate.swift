@@ -26,13 +26,14 @@ import UIKit
     // Channel" here is just a unique key to claim a registrar slot, the
     // same way any real Flutter plugin bootstraps its own method channel.
     // registrar(forPlugin:) returns an Optional, so it has to be unwrapped
-    // before .messenger is reachable on it.
+    // before messenger() is reachable on it. In this embedding API,
+    // messenger is a method, not a property — has to be called.
     guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ReceiptChannel") else {
       return
     }
     let receiptChannel = FlutterMethodChannel(
         name: "com.geraldmiller.safeprepalcohol/receipt",
-        binaryMessenger: registrar.messenger
+        binaryMessenger: registrar.messenger()
     )
     receiptChannel.setMethodCallHandler { (call, result) in
         if call.method == "isSandboxReceipt" {
